@@ -17,7 +17,7 @@ class Sphere_Rasterizer_Kernel
 {
 public:
 	// Sphere_Rasterizer_Kernel(std::vector<Sphere>& spheres, int2 output_resolution, int n_hf_entries);
-	Sphere_Rasterizer_Kernel(py::array& spheres, int n_hf_entries );
+	Sphere_Rasterizer_Kernel(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries );
 	~Sphere_Rasterizer_Kernel();
 
 	std::vector<std::tuple<float, float>> rasterize_spheres( float image_plane );

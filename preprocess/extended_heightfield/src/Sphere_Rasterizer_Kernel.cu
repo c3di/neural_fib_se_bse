@@ -94,10 +94,11 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	extended_heightfield_gpu = allocate_extended_heightfield_on_gpu();
 } */
 
-Sphere_Rasterizer_Kernel::Sphere_Rasterizer_Kernel(py::array& spheres, int n_hf_entries) // , std::pair<int, int> output_resolution, 
+Sphere_Rasterizer_Kernel::Sphere_Rasterizer_Kernel(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries) // , std::pair<int, int> output_resolution, 
 	// : output_resolution( make_int2( std::get<0>(output_resolution), std::get<1>(output_resolution) ) )
 	// , n_hf_entries(n_hf_entries)
 {
+	std::cout << "creating extended heightfield of resolution " << std::get<0>(output_resolution) << "/" << std::get<1>(output_resolution) << std::endl;
 	allocate_spheres_cpu(spheres);
 	spheres_gpu = allocate_spheres_on_gpu(spheres_cpu);
 	extended_heightfield_gpu = allocate_extended_heightfield_on_gpu();
