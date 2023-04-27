@@ -13,18 +13,21 @@ namespace py = pybind11;
 
 #include "sphere.h"
 
-class Sphere_Rasterizer_Kernel
+
+
+class Sphere_Rasterizer
 {
 public:
 	// Sphere_Rasterizer_Kernel(std::vector<Sphere>& spheres, int2 output_resolution, int n_hf_entries);
-	Sphere_Rasterizer_Kernel(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries );
-	~Sphere_Rasterizer_Kernel();
+	Sphere_Rasterizer(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries );
+	~Sphere_Rasterizer();
 
-	std::vector<std::tuple<float, float>> rasterize_spheres( float image_plane );
+	py::array_t<float> rasterize_spheres_py( float image_plane );
+	void rasterize_spheres( float image_plane );
 
 protected:
+	py::array_t<float> create_py_array(int resolution_x, int resolution_y, int resolution_z);
 	void allocate_spheres_cpu(py::array& spheres);
-	void call_kernel();
 
 	Sphere* allocate_spheres_on_gpu(const std::vector<Sphere>& spheres_cpu);
 	float2* allocate_extended_heightfield_on_gpu();
@@ -32,8 +35,9 @@ protected:
 protected:
 	std::vector<Sphere> spheres_cpu;
 	Sphere* spheres_gpu;
+	int n_spheres;
 
-	std::vector<std::tuple<float, float>> extended_heightfield_cpu;
+	py::array extended_heightfield_cpu;
 	float2* extended_heightfield_gpu;
 
 	int2 output_resolution;
