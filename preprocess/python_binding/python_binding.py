@@ -6,7 +6,7 @@ from extended_heightfield import Sphere_Rasterizer
 
 print("import successful")
 
-spheres = np.array( [ [8.0,4.0,0.0,2.0] ,[8.0,4.0,12.0,2.0]] )
+spheres = np.array( [ [8.0,4.0,21.0,2.0], [8.0,4.0,16.0,2.0], [8.0,4.0,0.0,2.0], [8.0,4.0,6.0,2.0], [8.0,4.0,18.5,2.0] ] )
 kernel = Sphere_Rasterizer( spheres, (32,32), 4 )
 
 print("rasterizing")

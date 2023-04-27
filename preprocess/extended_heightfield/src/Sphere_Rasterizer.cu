@@ -20,9 +20,73 @@ void throw_on_cuda_error()
 	}
 };
 
+__global__ void resolve_csg_kernel(
+	float2* extended_heightfield,
+	int3 output_resolution,
+	int n_hf_entries)
+{
+	int idx = blockIdx.x * blockDim.x + threadIdx.x;
+	int idy = blockIdx.y * blockDim.y + threadIdx.y;
+	if (idx >= output_resolution.x)
+		return;
+	if (idx >= output_resolution.y)
+		return;
+
+	int pixel_index = idx * output_resolution.y + idy;
+
+	int i = output_resolution.z;
+	// while (extended_heightfield[pixel_index * output_resolution.z + i].x != empty) 
+	while ( i > 0 )
+	{
+		for (int j = 0; j < i-1; j++)
+		{
+			if (idx == 8 && idy == 4)
+			{
+				for (int ii = 0; ii < output_resolution.z; ii++)
+					printf("    %i : %.2f %.2f\n", ii, extended_heightfield[pixel_index * output_resolution.z + ii].x, extended_heightfield[pixel_index * output_resolution.z + ii].y);
+			}
+
+			float2& a = extended_heightfield[pixel_index * output_resolution.z + j];
+			float2& b = extended_heightfield[pixel_index * output_resolution.z + j + 1];
+
+			// case A: order ok
+			if (a.y < b.x)
+			{
+				if (idx == 8 && idy == 4)
+					printf("  %i %i noop\n", i, j );
+			}
+
+			// case B: swap
+			else if (a.x > b.y)
+			{
+				float2 tmp = b;
+				b = a;
+				a = tmp;
+				if (idx == 8 && idy == 4)
+					printf("  %i %i swap %.2f %.2f <-> %.2f %.2f \n", i, j, a.x, a.y, b.x, b.y );
+			}
+
+			// case C: merge
+			else {
+				float new_x = fminf(a.x, b.x);
+				float new_y = fmaxf(a.y, b.y);
+				if (idx == 8 && idy == 4) 
+				{
+					printf("  %i %i merge %.2f %.2f <-> %.2f %.2f \n", i, j, a.x, a.y, b.x, b.y);
+				}
+				a = make_float2(new_x, new_y);
+				b = empty_interval;
+				continue;
+			} // merge
+
+		}
+		i--;
+	}
+}
+
 __global__ void rasterize_sphere_kernel(Sphere* spheres,
 								        int n_spheres,
-								        float2* extended_heightfield,
+								        float2* extended_heightfield, // contains entry/exit information as float2 per pixel
 	                                    int2 output_resolution,
 										int n_hf_entries,
 										float image_plane_z )
@@ -72,6 +136,9 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 		if (entry < image_plane_z)
 			entry = image_plane_z;
 
+		if (idx == 8 && idy == 4)
+			printf("  creating %.2f %.2f\n", entry, exit );
+
 		extended_heightfield[pixel_index * n_spheres + hit_index] = make_float2( entry, exit );
 		hit_index++;
 	}
@@ -113,7 +180,10 @@ void Sphere_Rasterizer::rasterize_spheres( float image_plane )
 	int2 grid_size = output_resolution;
 	dim3 block_size(32, 32);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_sphere_kernel << <num_blocks, block_size >> > ( spheres_gpu, spheres_cpu.size(), extended_heightfield_gpu, output_resolution, n_hf_entries, image_plane );
+	rasterize_sphere_kernel << <num_blocks, block_size >> > (spheres_gpu, spheres_cpu.size(), extended_heightfield_gpu, output_resolution, n_hf_entries, image_plane);
+
+	int3 buffer_size = make_int3(output_resolution.x, output_resolution.y, n_spheres);
+	resolve_csg_kernel << <num_blocks, block_size >> > (extended_heightfield_gpu, buffer_size, n_hf_entries);
 	throw_on_cuda_error();
 }
 
