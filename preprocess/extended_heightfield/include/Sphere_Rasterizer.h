@@ -32,6 +32,8 @@ protected:
 	Sphere* allocate_spheres_on_gpu(const std::vector<Sphere>& spheres_cpu);
 	float2* allocate_extended_heightfield_on_gpu();
 
+	void presort_spheres();
+
 protected:
 	std::vector<Sphere> spheres_cpu;
 	Sphere* spheres_gpu;

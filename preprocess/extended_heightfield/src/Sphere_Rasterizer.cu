@@ -2,6 +2,7 @@
 
 #include "Sphere_Rasterizer.h"
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -34,26 +35,23 @@ __global__ void resolve_csg_kernel(
 
 	int pixel_index = idx * output_resolution.y + idy;
 
-	int i = output_resolution.z;
-	// while (extended_heightfield[pixel_index * output_resolution.z + i].x != empty) 
-	while ( i > 0 )
-	{
-		for (int j = 0; j < i-1; j++)
-		{
-			if (idx == 8 && idy == 4)
-			{
-				for (int ii = 0; ii < output_resolution.z; ii++)
-					printf("    %i : %.2f %.2f\n", ii, extended_heightfield[pixel_index * output_resolution.z + ii].x, extended_heightfield[pixel_index * output_resolution.z + ii].y);
-			}
+	float2& last_element_of_interest = extended_heightfield[pixel_index * output_resolution.z + n_hf_entries-1];
 
+	int i = 0;
+	while ( i < output_resolution.z && extended_heightfield[pixel_index * output_resolution.z + i].x != empty)
+	{
+		for (int j = i-1; j >= 0; j--)
+		{
 			float2& a = extended_heightfield[pixel_index * output_resolution.z + j];
 			float2& b = extended_heightfield[pixel_index * output_resolution.z + j + 1];
+
+			// early termination based on sorted input assumption
+			if (b.x > last_element_of_interest.y)
+				return;
 
 			// case A: order ok
 			if (a.y < b.x)
 			{
-				if (idx == 8 && idy == 4)
-					printf("  %i %i noop\n", i, j );
 			}
 
 			// case B: swap
@@ -62,8 +60,6 @@ __global__ void resolve_csg_kernel(
 				float2 tmp = b;
 				b = a;
 				a = tmp;
-				if (idx == 8 && idy == 4)
-					printf("  %i %i swap %.2f %.2f <-> %.2f %.2f \n", i, j, a.x, a.y, b.x, b.y );
 			}
 
 			// case C: merge
@@ -78,9 +74,8 @@ __global__ void resolve_csg_kernel(
 				b = empty_interval;
 				continue;
 			} // merge
-
 		}
-		i--;
+		i++;
 	}
 }
 
@@ -159,6 +154,7 @@ Sphere_Rasterizer::Sphere_Rasterizer(py::array& spheres, std::pair<int, int> out
 {
 	std::cout << "creating extended heightfield of resolution " << std::get<0>(output_resolution) << "/" << std::get<1>(output_resolution) << std::endl;
 	allocate_spheres_cpu(spheres);
+	presort_spheres();
 	spheres_gpu = allocate_spheres_on_gpu(spheres_cpu);
 	extended_heightfield_gpu = allocate_extended_heightfield_on_gpu();
 }
@@ -234,4 +230,12 @@ float2* Sphere_Rasterizer::allocate_extended_heightfield_on_gpu()
 	float2* ptr_gpu;
 	cudaMalloc((void**)&ptr_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * n_spheres);
 	return ptr_gpu;
+}
+
+void Sphere_Rasterizer::presort_spheres()
+{
+	struct {
+		bool operator()(Sphere a, Sphere b) const { return a.z + a.r < b.z + b.r; }
+	} bottomPosition;
+	std::sort( spheres_cpu.begin(), spheres_cpu.end(), bottomPosition );
 }
