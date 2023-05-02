@@ -17,11 +17,11 @@ public:
 	HeightFieldExtractor(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64 );
 	~HeightFieldExtractor();
 
-	py::array_t<float> rasterize_py( float image_plane );
+	py::array_t<float> extract_data_representation_py( float image_plane );
 	void rasterize(float image_plane );
 
 protected:
-	float2* allocate_extended_heightfield_on_gpu();
+	py::array_t<float> collect_result();
 
 protected:
 	Sphere_Rasterizer* sphere_rasterizer;
@@ -29,6 +29,8 @@ protected:
 
 	py::array extended_heightfield_cpu;
 	float2* extended_heightfield_gpu;
+
+	float2* result_gpu;
 
 	int2 output_resolution;
 	int n_hf_entries;

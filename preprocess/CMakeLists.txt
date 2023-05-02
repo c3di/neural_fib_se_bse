@@ -27,7 +27,7 @@ include(GetSourceFiles)
 
 set(FILE_TYPES *.c *.cc *.cu *.cuh *.cpp *.h *.hpp *.tcc)
 find_directories(DIRS extended_heightfield "${FILE_TYPES}")
-generate_source_tree(HOST_SOURCES "${DIRS}" "${FILE_TYPES}")
+generate_source_tree(LIBRARY_SOURCES "${DIRS}" "${FILE_TYPES}")
 
 set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heightfield/include")
 
@@ -46,7 +46,7 @@ include_directories(${Python_NumPy_INCLUDE_DIRS})
 include_directories(${pybind11_INCLUDE_DIRS})
 include_directories(${EXTENDED_HEIGHTFIELD_INCLUDE_DIR})
 				  
-add_library(extended_heightfield SHARED ${HOST_SOURCES} )
+add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
 
 set_target_properties(extended_heightfield PROPERTIES SUFFIX  ".pyd")
 set_target_properties(extended_heightfield PROPERTIES RUNTIME_OUTPUT_DIRECTORY "../python_binding")
@@ -106,3 +106,6 @@ set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE 
 INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pyproj" PLATFORM "Any CPU")
 
 add_dependencies(python_binding extended_heightfield)
+
+add_executable(cli "cli/main.cpp" ${LIBRARY_SOURCES} )
+add_dependencies(cli extended_heightfield)

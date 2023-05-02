@@ -23,7 +23,7 @@ public:
 	float* get_extended_heightfield_cpu( py::array_t<float> extended_heightfield );
 
 protected:
-	py::array_t<float>* extended_heightfield_py;
+	py::array_t<float> extended_heightfield_py;
 	float2* extended_heightfield_gpu;
 	float* extended_heightfield_cpu;
 	int3 buffer_size;

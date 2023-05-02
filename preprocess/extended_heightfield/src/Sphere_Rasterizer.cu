@@ -25,7 +25,7 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
 	if (idx >= output_resolution.x)
 		return;
-	if (idx >= output_resolution.y)
+	if (idy >= output_resolution.y)
 		return;
 
 	int pixel_index = idx * output_resolution.y + idy;
@@ -56,7 +56,6 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 		if (debug && idx == 74 && idy == 45)
 			printf("    : front of image plance\n");
 
-
 		// calculate entry and exit point by computing both solutions to r^2 = (x-x0)^2 + (y-y0)^2 + (z-z0)^2
 		const float dx = pixel_x - sphere.x;
 		const float dy = pixel_y - sphere.y;
@@ -75,7 +74,6 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 
 		if (debug && idx == 74 && idy == 45)
 			printf("    : intersect %.2f - %.2f\n", entry, exit);
-
 
 		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( entry, exit );
 		hit_index++;

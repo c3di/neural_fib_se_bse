@@ -15,7 +15,7 @@ PYBIND11_MODULE(extended_heightfield, m)
 
     py::class_<HeightFieldExtractor>(m, "HeightFieldExtractor")
         .def(py::init<py::array&, std::pair<int, int>, int, int>())
-        .def("rasterize", &HeightFieldExtractor::rasterize_py, py::arg("image_plane"));
+        .def("extract_data_representation", &HeightFieldExtractor::extract_data_representation_py, py::arg("image_plane"));
 
     py::class_<CSG_Resolver>(m, "CSG_Resolver")
         .def(py::init<py::array&, int>())
