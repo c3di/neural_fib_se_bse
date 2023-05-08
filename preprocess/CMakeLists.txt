@@ -46,10 +46,8 @@ include_directories(${Python_NumPy_INCLUDE_DIRS})
 include_directories(${pybind11_INCLUDE_DIRS})
 include_directories(${EXTENDED_HEIGHTFIELD_INCLUDE_DIR})
 				  
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
-
-set_target_properties(extended_heightfield PROPERTIES SUFFIX  ".pyd")
-set_target_properties(extended_heightfield PROPERTIES RUNTIME_OUTPUT_DIRECTORY "../python_binding")
 
 if(MSVC)
 	target_link_libraries(extended_heightfield ${Python_LIBRARY_RELEASE})
@@ -69,13 +67,21 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     ENDIF()
 ENDIF()
 
+add_custom_command(
+	TARGET extended_heightfield
+	POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+	"${CMAKE_BINARY_DIR}/bin/$<CONFIG>/extended_heightfield.dll"
+	"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/$<CONFIG>/extended_heightfield.pyd"
+)
+		
 # Copy necessary dlls to target directory
 if(MSVC)
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Debug/")
 	add_custom_command(
 		TARGET extended_heightfield
 		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
 		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
 		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Debug/"
 	)
@@ -84,7 +90,7 @@ if(MSVC)
 	add_custom_command(
 		TARGET extended_heightfield
 		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
 		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
 		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Release/"
 	)
@@ -93,11 +99,10 @@ if(MSVC)
 	add_custom_command(
 		TARGET extended_heightfield
 		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
 		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
 		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/RelWithDebInfo/"
 	)
-
 endif(MSVC)
 
 set_target_properties(extended_heightfield PROPERTIES CUDA_ARCHITECTURES ${COMPUTE_CAPABILITY})
@@ -107,5 +112,14 @@ INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pypr
 
 add_dependencies(python_binding extended_heightfield)
 
-add_executable(cli "cli/main.cpp" ${LIBRARY_SOURCES} )
+add_executable(cli "cli/main.cpp" )
 add_dependencies(cli extended_heightfield)
+
+
+if(MSVC)
+	target_link_directories(cli PUBLIC "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
+	target_link_libraries(cli extended_heightfield.lib)
+	target_link_libraries(cli ${Python_LIBRARY_RELEASE})
+else()
+	target_link_libraries(cli ${Python_LIBRARIES})
+endif()

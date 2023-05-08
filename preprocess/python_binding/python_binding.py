@@ -22,12 +22,10 @@ for line in file:
     spheres[int(i)-1,:] = [float(x),float(y),float(z),float(r)]
 file.close()
 
-# spheres = np.array( [ [74,45,100,4] ]).astype( np.float32 )
-
 print("performing preprocessing")
 start = time.perf_counter()
 preprocessor = HeightFieldExtractor( spheres, (850,850), 2, 64 );
-extended_heightfield = preprocessor.extract_data_representation( 0.0 )
+extended_heightfield, normal_map = preprocessor.extract_data_representation( 0.0 )
 stop = time.perf_counter()
 print(f"done preprocessing in {stop-start:0.3f} sec")
 
@@ -36,25 +34,7 @@ for z in range(extended_heightfield.shape[2]):
     img = Image.fromarray(entry_0, "I;16")
     img.save("output/integrated_"+str(z)+".tif");
 
-# rasterizer = Sphere_Rasterizer( spheres, (850,850), 2, 64);
-# print("computing intersections")
-# hit_buffer = rasterizer.rasterize_spheres(0)
-# print("done")
-# print( hit_buffer[45,74,:] )
-
-# for z in range(hit_buffer.shape[2]):
-#     entry_0 = hit_buffer[:,:,z].astype(np.uint16)
-#     img = Image.fromarray(entry_0, "I;16")
-#    img.save("output/entry_exit_"+str(z)+".tif");
-  
-# print("resolving CSG")
-# csg_resolver = CSG_Resolver( hit_buffer, 2 );
-# extended_heightfield = csg_resolver.resolve_csg( 0.0 )
-# print("done")
-
-# for z in range(hit_buffer.shape[2]):
-#    entry_0 = extended_heightfield[:,:,z].astype(np.uint16)
-#    img = Image.fromarray(entry_0, "I;16")
-#    img.save("output/resolved_"+str(z)+".tif");
-
-# print(extended_heightfield[45,74,:]
+normal_map = ( normal_map + 1.0 ) * 127.5
+normal = normal_map.astype(np.uint8)
+img = Image.fromarray(normal, "RGB")
+img.save("output/norrmal.tif");

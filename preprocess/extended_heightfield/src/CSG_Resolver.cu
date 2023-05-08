@@ -90,7 +90,7 @@ CSG_Resolver::CSG_Resolver(float2* extended_heightfield_gpu, int3 buffer_size, i
 
 CSG_Resolver::CSG_Resolver(py::array_t<float> extended_heightfield, int n_hf_entries)
 	: n_hf_entries(n_hf_entries) 
-	, extended_heightfield_py(extended_heightfield)
+	, extended_heightfield_py(&extended_heightfield)
 {
 	extended_heightfield_cpu = get_extended_heightfield_cpu( extended_heightfield );
 	extended_heightfield_gpu = allocate_float2_buffer_on_gpu( buffer_size );
@@ -105,7 +105,7 @@ py::array_t<float> CSG_Resolver::resolve_csg_py(float image_plane)
 {
 	resolve_csg(image_plane);
 	cudaMemcpy(extended_heightfield_cpu, extended_heightfield_gpu, sizeof(float2) * buffer_size.x * buffer_size.y * buffer_size.z, cudaMemcpyDeviceToHost);
-	return extended_heightfield_py;
+	return *extended_heightfield_py;
 }
 
 void CSG_Resolver::resolve_csg(float image_plane)

@@ -13,19 +13,22 @@
 class Sphere_Rasterizer
 {
 public:
-	// Sphere_Rasterizer_Kernel(std::vector<Sphere>& spheres, int2 output_resolution, int n_hf_entries);
 	Sphere_Rasterizer(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
 	Sphere_Rasterizer(float2* extended_heightfield_gpu, py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
+	Sphere_Rasterizer(float2* extended_heightfield_gpu, std::vector<Sphere>& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
 	~Sphere_Rasterizer();
 
-	py::array_t<float> rasterize_spheres_py( float image_plane );
+	std::pair< py::array_t<float>, py::array_t<float> > rasterize_spheres_py( float image_plane );
 	void rasterize_spheres( float image_plane );
+
+	py::array_t<float> get_normal_map_py();
+	std::vector<float> get_normal_map();
+	py::array_t<float> get_extended_height_field_py();
 
 protected:
 	void allocate_spheres_cpu(py::array& spheres);
 
 	Sphere* allocate_spheres_on_gpu(const std::vector<Sphere>& spheres_cpu);
-	float2* allocate_extended_heightfield_on_gpu();
 
 	void presort_spheres();
 
@@ -34,8 +37,9 @@ protected:
 	Sphere* spheres_gpu;
 	int n_spheres;
 
-	py::array_t<float> extended_heightfield_cpu;
 	float2* extended_heightfield_gpu;
+	float3* normal_map_gpu;
+	float*  z_buffer_gpu;
 
 	int2 output_resolution;
 	int n_hf_entries;
