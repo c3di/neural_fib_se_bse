@@ -1,7 +1,8 @@
 #pragma once
 
-typedef struct
+struct Sphere
 {
 	float x, y, z;
 	float r;
-} Sphere;
+	inline bool operator()(Sphere a, Sphere b) const { return a.z + a.r < b.z + b.r; }
+};

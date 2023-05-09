@@ -11,7 +11,7 @@ PYBIND11_MODULE(extended_heightfield, m)
     // inpainting API
     py::class_<Sphere_Rasterizer>(m, "Sphere_Rasterizer")
         .def(py::init<py::array&, std::pair<int, int>, int, int>())
-        .def("rasterize_spheres", &Sphere_Rasterizer::rasterize_spheres_py, py::arg("image_plane"));
+        .def("rasterize_spheres", &Sphere_Rasterizer::rasterize_py, py::arg("image_plane"));
 
     py::class_<HeightFieldExtractor>(m, "HeightFieldExtractor")
         .def(py::init<py::array&, std::pair<int, int>, int, int>())

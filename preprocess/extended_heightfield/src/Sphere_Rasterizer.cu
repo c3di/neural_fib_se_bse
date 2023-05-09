@@ -113,130 +113,30 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 }
 
 Sphere_Rasterizer::Sphere_Rasterizer(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: output_resolution(make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution)))
-	, n_hf_entries(n_hf_entries)
+	: Abstract_Rasterizer<Sphere>(spheres, output_resolution, n_hf_entries, max_buffer_length )
 {
-	allocate_spheres_cpu(spheres);
-	if (n_spheres < max_buffer_length)
-		buffer_length = n_spheres;
-	else
-		buffer_length = max_buffer_length;
-	presort_spheres();
-	spheres_gpu = allocate_spheres_on_gpu(spheres_cpu);
-
-	extended_heightfield_gpu = allocate_float2_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length));
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 Sphere_Rasterizer::Sphere_Rasterizer(float2* extended_heightfield_gpu, py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length) 
-	: extended_heightfield_gpu(extended_heightfield_gpu)
-	, output_resolution( make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution) ) )
-	, n_hf_entries(n_hf_entries)
+	: Abstract_Rasterizer<Sphere>(extended_heightfield_gpu, spheres, output_resolution,  n_hf_entries, max_buffer_length)
 {
-	allocate_spheres_cpu(spheres);
-	if (n_spheres < max_buffer_length)
-		buffer_length = n_spheres;
-	else
-		buffer_length = max_buffer_length;
-	presort_spheres();
-	spheres_gpu = allocate_spheres_on_gpu(spheres_cpu);
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 Sphere_Rasterizer::Sphere_Rasterizer(float2* extended_heightfield_gpu, std::vector<Sphere>& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: extended_heightfield_gpu(extended_heightfield_gpu)
-	, output_resolution(make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution)))
-	, n_hf_entries(n_hf_entries)
-	, spheres_cpu(spheres)
+	: Abstract_Rasterizer<Sphere>(extended_heightfield_gpu, spheres, output_resolution, n_hf_entries, max_buffer_length)
 {
-	n_spheres = (int) spheres.size();
-	if (n_spheres < max_buffer_length)
-		buffer_length = n_spheres;
-	else
-		buffer_length = max_buffer_length;
-	presort_spheres();
-	spheres_gpu = allocate_spheres_on_gpu(spheres_cpu);
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 Sphere_Rasterizer::~Sphere_Rasterizer()
 {
-	// todo fix leaks
 }
 
-std::pair< py::array_t<float>, py::array_t<float> >  Sphere_Rasterizer::rasterize_spheres_py( float image_plane )
-{
-	rasterize_spheres( image_plane );
-	return std::pair<py::array_t<float>, py::array_t<float> >(get_extended_height_field_py(), get_normal_map_py());
-}
-
-void Sphere_Rasterizer::rasterize_spheres( float image_plane )
+void Sphere_Rasterizer::rasterize( float image_plane )
 {
 	int2 grid_size = output_resolution;
 	dim3 block_size(32, 32);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_sphere_kernel << <num_blocks, block_size >> > (spheres_gpu, spheres_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, false );
+	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, false );
 	throw_on_cuda_error();
 }
 
-py::array_t<float> Sphere_Rasterizer::get_normal_map_py()
-{
-	auto normal_map_py = create_py_array(output_resolution.x, output_resolution.y, 3);
-	cudaMemcpy(normal_map_py.request().ptr, normal_map_gpu, sizeof(float3) * output_resolution.x * output_resolution.y * 1, cudaMemcpyDeviceToHost);
-	return normal_map_py;
-}
-
-std::vector<float> Sphere_Rasterizer::get_normal_map()
-{
-	std::vector<float> normal_map_cpu(3 * output_resolution.x * output_resolution.y );
-	cudaMemcpy(&normal_map_cpu[0], normal_map_gpu, sizeof(float3) * output_resolution.x * output_resolution.y * 1, cudaMemcpyDeviceToHost);
-	return normal_map_cpu;
-}
-
-py::array_t<float> Sphere_Rasterizer::get_extended_height_field_py()
-{
-	auto extended_hf_py = create_py_array(output_resolution.x, output_resolution.y, buffer_length * 2);
-	cudaMemcpy(extended_hf_py.request().ptr, extended_heightfield_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * buffer_length, cudaMemcpyDeviceToHost);
-	return extended_hf_py;
-}
-
-
-void Sphere_Rasterizer::allocate_spheres_cpu(py::array& spheres)
-{
-	py::buffer_info info = spheres.request();
-	if (info.ndim != 2)
-		throw std::invalid_argument("spheres array is expected to be of dimensions nx4");
-	if (info.shape[1] != 4)
-		throw std::invalid_argument("spheres array is expected to be of dimensions nx4");
-	if (info.format != "f")
-		throw std::invalid_argument("spheres array is expected to be of dtype float32, found " + info.format);
-	n_spheres = info.shape[0];
-	spheres_cpu.resize(n_spheres);
-	float* ptr = (float*) info.ptr;
-	for (size_t i = 0; i < info.shape[0]; i++)
-	{
-		spheres_cpu[i].x = *(ptr++);
-		spheres_cpu[i].y = *(ptr++);
-		spheres_cpu[i].z = *(ptr++);
-		spheres_cpu[i].r = *(ptr++);
-	}
-}
-
-Sphere* Sphere_Rasterizer::allocate_spheres_on_gpu( const std::vector<Sphere>& spheres_cpu )
-{
-	Sphere* ptr_gpu;
-	cudaMalloc((void**)&ptr_gpu, sizeof(Sphere) * n_spheres);
-	cudaMemcpy(ptr_gpu, &spheres_cpu[0], sizeof(Sphere) * n_spheres, cudaMemcpyHostToDevice);
-	return ptr_gpu;
-}
-
-void Sphere_Rasterizer::presort_spheres()
-{
-	struct {
-		bool operator()(Sphere a, Sphere b) const { return a.z + a.r < b.z + b.r; }
-	} bottomPosition;
-	std::sort( spheres_cpu.begin(), spheres_cpu.end(), bottomPosition );
-}

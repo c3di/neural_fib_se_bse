@@ -71,7 +71,7 @@ std::pair< py::array_t<float>, py::array_t<float>>  HeightFieldExtractor::extrac
 
 void HeightFieldExtractor::rasterize(float image_plane)
 {
-	sphere_rasterizer->rasterize_spheres(image_plane);
+	sphere_rasterizer->rasterize(image_plane);
 	csg_resolver->resolve_csg(image_plane);
 }
 
