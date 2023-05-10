@@ -6,7 +6,7 @@
     <ProjectHome>.</ProjectHome>
     <StartupFile>python_binding.py</StartupFile>
     <SearchPath>Debug</SearchPath>
-    <WorkingDirectory>.</WorkingDirectory>
+    <WorkingDirectory>C:\development\post_fib_se_bse_surrogate\preprocess</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>python_binding</Name>
     <RootNamespace>python_binding</RootNamespace>

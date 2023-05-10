@@ -4,27 +4,48 @@ import math
 from PIL import Image
 import time
 
+print("attempting import")
+
 from extended_heightfield import HeightFieldExtractor
 from extended_heightfield import Sphere_Rasterizer
+from extended_heightfield import Cylinder_Rasterizer
 from extended_heightfield import CSG_Resolver
 
 print("import successful")
 
 # spheres = np.array( [ [8.0,4.0,4.0,2.0], [8.0,4.0,1.0,2.0], [8.0,4.0,21.0,2.0], [8.0,4.0,16.0,2.0], [8.0,4.0,0.0,2.0], [8.0,4.0,6.0,2.0], [8.0,4.0,18.5,2.0], [8.0,4.0,256,2.0], [8.0,4.0,512,2.0] ] )
 
-file = open("data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt")
-nspheres = int( next(file) )
-spheres = np.empty( (nspheres, 4), dtype=np.float32 )
-_ = next(file) # skip empty line
+# filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"
+filename = "data/Cylinder_Vv03_r5-10_h100-150_homogen_ITWMconfig.txt"
+file = open(filename)
 
-for line in file:
-    i, x, y, z, r = line.split("\t")
-    spheres[int(i)-1,:] = [float(x),float(y),float(z),float(r)]
-file.close()
+def read_primitives( file, primitive_size, n_items ):
+    primitives = np.empty( (n_items, primitive_size), dtype=np.float32 )
+    for count in range( n_items ):
+        line = next(file)
+        items = line.split("\t")
+        i = int(items[0])
+        for j in range(1, primitive_size+1):
+            primitives[int(i)-1,j-1] = float( items[j] )
+    return primitives
+
+n_spheres   = int( next(file) )
+n_cylinders = int( next(file) )
+
+spheres   = read_primitives(file, 4, n_spheres);
+cylinders = read_primitives(file, 8, n_cylinders);
+
+# cylinders = np.empty( (1, 8), dtype=np.float32 )
+# cylinders[0] = [425,425,400,0.0,1.57079632679,0,50,150]
 
 print("performing preprocessing")
 start = time.perf_counter()
-preprocessor = HeightFieldExtractor( spheres, (850,850), 2, 64 );
+preprocessor = HeightFieldExtractor( (850,850), 2, 256 )
+print(spheres.shape)
+if n_spheres > 0:
+    preprocessor.add_spheres( spheres )
+if n_cylinders > 0:
+    preprocessor.add_cylinders( cylinders )
 extended_heightfield, normal_map = preprocessor.extract_data_representation( 0.0 )
 stop = time.perf_counter()
 print(f"done preprocessing in {stop-start:0.3f} sec")

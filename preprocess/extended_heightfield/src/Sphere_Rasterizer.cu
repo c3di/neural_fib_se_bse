@@ -112,18 +112,13 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	}
 }
 
-Sphere_Rasterizer::Sphere_Rasterizer(py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: Abstract_Rasterizer<Sphere>(spheres, output_resolution, n_hf_entries, max_buffer_length )
+Sphere_Rasterizer::Sphere_Rasterizer(std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+	: Abstract_Rasterizer<Sphere>(output_resolution, n_hf_entries, max_buffer_length )
 {
 }
 
-Sphere_Rasterizer::Sphere_Rasterizer(float2* extended_heightfield_gpu, py::array& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length) 
-	: Abstract_Rasterizer<Sphere>(extended_heightfield_gpu, spheres, output_resolution,  n_hf_entries, max_buffer_length)
-{
-}
-
-Sphere_Rasterizer::Sphere_Rasterizer(float2* extended_heightfield_gpu, std::vector<Sphere>& spheres, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: Abstract_Rasterizer<Sphere>(extended_heightfield_gpu, spheres, output_resolution, n_hf_entries, max_buffer_length)
+Sphere_Rasterizer::Sphere_Rasterizer(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+	: Abstract_Rasterizer<Sphere>(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
 {
 }
 
@@ -140,3 +135,6 @@ void Sphere_Rasterizer::rasterize( float image_plane )
 	throw_on_cuda_error();
 }
 
+void Sphere_Rasterizer::assign_aabb()
+{
+}

@@ -8,14 +8,26 @@
 #include <vector>
 #include <tuple>
 
-template<class Primitive>
-class Abstract_Rasterizer
+class Rasterizer
 {
 public:
-	Abstract_Rasterizer(py::array& primitives, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
-	Abstract_Rasterizer(float2* extended_heightfield_gpu, py::array& primitives, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
-	Abstract_Rasterizer(float2* extended_heightfield_gpu, std::vector<Primitive>& primitives, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
+	virtual std::pair< py::array_t<float>, py::array_t<float> > rasterize_py(float image_plane) = 0;
+	virtual void rasterize(float image_plane) = 0;
+	virtual py::array_t<float> get_normal_map_py() = 0;
+	virtual std::vector<float> get_normal_map() = 0;
+	virtual py::array_t<float> get_extended_height_field_py() = 0;
+};
+
+template<class Primitive>
+class Abstract_Rasterizer : public Rasterizer
+{
+public:
+	Abstract_Rasterizer(std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length = 64);
+	Abstract_Rasterizer(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length = 64);
 	virtual ~Abstract_Rasterizer();
+
+	virtual void add_primitives(std::vector<Primitive>& primitives);
+	virtual void add_primitives_py(py::array& primitives);
 
 	virtual std::pair< py::array_t<float>, py::array_t<float> > rasterize_py( float image_plane );
 	virtual void rasterize( float image_plane ) = 0;
@@ -29,6 +41,7 @@ protected:
 
 	virtual Primitive* allocate_primitives_on_gpu(const std::vector<Primitive>& primitives_cpu);
 
+	virtual void assign_aabb() = 0;
 	virtual void presort_primitives();
 
 protected:

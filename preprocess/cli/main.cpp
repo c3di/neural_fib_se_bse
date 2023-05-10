@@ -7,6 +7,7 @@
 
 #include "sphere.h"
 #include "HeightFieldExtractor.h"
+#include "cuda_matrix.h"
 
 int main( int argc, char* argv[] )
 { 
@@ -32,7 +33,8 @@ int main( int argc, char* argv[] )
     ifs.close();
 
     std::cout << "performing preprocessing" << std::endl;
-    auto preprocessor = new HeightFieldExtractor(spheres, std::pair<int, int>(850, 850), 2, 64);
+    auto preprocessor = new HeightFieldExtractor( std::pair<int, int>(850, 850), 2, 64 );
+    preprocessor->add_spheres( spheres );
 
     auto extended_heightfield = preprocessor->extract_data_representation( 0.0f );
     std::cout << "done" << std::endl;

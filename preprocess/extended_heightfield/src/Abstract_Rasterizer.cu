@@ -9,58 +9,45 @@
 
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 template<class Primitive>
-Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(py::array& primitives, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length)
 	: output_resolution(make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution)))
 	, n_hf_entries(n_hf_entries)
+	, buffer_length(buffer_length)
 {
-	allocate_primitives_cpu(primitives);
-	if (n_primitives < max_buffer_length)
-		buffer_length = n_primitives;
-	else
-		buffer_length = max_buffer_length;
-	presort_primitives();
-	primitives_gpu = allocate_primitives_on_gpu(primitives_cpu);
-
 	extended_heightfield_gpu = allocate_float2_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length));
 	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 template<class Primitive>
-Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(float2* extended_heightfield_gpu, py::array& primitives, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length)
 	: extended_heightfield_gpu(extended_heightfield_gpu)
+	, z_buffer_gpu(z_buffer_gpu)
+	, normal_map_gpu(normal_map_gpu)
 	, output_resolution( make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution) ) )
 	, n_hf_entries(n_hf_entries)
+	, buffer_length(buffer_length)
 {
-	allocate_primitives_cpu(primitives);
-	if (n_primitives < max_buffer_length)
-		buffer_length = n_primitives;
-	else
-		buffer_length = max_buffer_length;
-	presort_primitives();
-	primitives_gpu = allocate_primitives_on_gpu(primitives_cpu);
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 template<class Primitive>
-Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(float2* extended_heightfield_gpu, std::vector<Primitive>& primitives, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: extended_heightfield_gpu(extended_heightfield_gpu)
-	, output_resolution(make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution)))
-	, n_hf_entries(n_hf_entries)
-	, primitives_cpu(primitives)
+void Abstract_Rasterizer<Primitive>::add_primitives(std::vector<Primitive>& primitives)
 {
+	primitives_cpu = primitives;
 	n_primitives = (int)primitives.size();
-	if (n_primitives < max_buffer_length)
-		buffer_length = n_primitives;
-	else
-		buffer_length = max_buffer_length;
 	presort_primitives();
 	primitives_gpu = allocate_primitives_on_gpu(primitives_cpu);
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
+}
+
+template<class Primitive>
+void Abstract_Rasterizer<Primitive>::add_primitives_py(py::array& primitives)
+{
+	allocate_primitives_cpu(primitives);
+	presort_primitives();
+	primitives_gpu = allocate_primitives_on_gpu(primitives_cpu);
 }
 
 template<class Primitive>
@@ -105,18 +92,17 @@ void Abstract_Rasterizer<Primitive>::allocate_primitives_cpu(py::array& primitiv
 {
 	py::buffer_info info = primitives.request();
 	if (info.ndim != 2)
-		throw std::invalid_argument("spheres array is expected to be of dimensions nx4");
-	if (info.shape[1] != 4)
-		throw std::invalid_argument("spheres array is expected to be of dimensions nx4");
+		throw std::invalid_argument("primitives array is expected to be of two dimensions, found "+std::to_string(info.ndim));
+	if (info.shape[1] != Primitive::N_FLOAT_PARAMS)
+		throw std::invalid_argument("primitives array is expected to be of dimensions nx" + std::to_string(Primitive::N_FLOAT_PARAMS) + ", found " + std::to_string(info.shape[0]) + "x" + std::to_string(info.shape[1]) );
 	if (info.format != "f")
 		throw std::invalid_argument("spheres array is expected to be of dtype float32, found " + info.format);
 	n_primitives = info.shape[0];
 	primitives_cpu.resize(n_primitives);
 	float* ptr = (float*) info.ptr;
-	const size_t size_in_float = sizeof(Primitive) / sizeof(float);
-	for (size_t i = 0; i < info.shape[0]; i++)
+	for (size_t i = 0; i < n_primitives; i++)
 	{
-		for (size_t j = 0; j < size_in_float; j++)
+		for (size_t j = 0; j < Primitive::N_FLOAT_PARAMS; j++)
 		{
 			float* primitive_ptr = (float*) &primitives_cpu[i];
 			primitive_ptr[j] = *(ptr++);
@@ -136,11 +122,13 @@ Primitive* Abstract_Rasterizer<Primitive>::allocate_primitives_on_gpu( const std
 template<class Primitive>
 void Abstract_Rasterizer<Primitive>::presort_primitives()
 {
+	assign_aabb();
 	if (primitives_cpu.size() == 0)
 		throw std::runtime_error("no primitives in call to presort");
 	std::sort(primitives_cpu.begin(), primitives_cpu.end(), primitives_cpu[0]);
 }
 
 #include "sphere.h"
-
+#include "cylinder.h"
 template class Abstract_Rasterizer<Sphere>;
+template class Abstract_Rasterizer<Cylinder>;
