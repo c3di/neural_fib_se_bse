@@ -36,7 +36,7 @@ spheres   = read_primitives(file, 4, n_spheres);
 cylinders = read_primitives(file, 8, n_cylinders);
 
 # cylinders = np.empty( (1, 8), dtype=np.float32 )
-# cylinders[0] = [425,425,400,0.0,1.57079632679,0,50,150]
+# cylinders[0] = [ 425.0, 425.0, 400.0, 1.57079632679, 0.0, 0.0, 50.0, 150.0 ]
 
 print("performing preprocessing")
 start = time.perf_counter()

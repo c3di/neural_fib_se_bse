@@ -24,7 +24,7 @@ __global__ void resolve_csg_kernel
 	if (idy >= output_resolution.y)
 		return;
 
-	int pixel_index = idx * output_resolution.y + idy;
+	int pixel_index = idy * output_resolution.x + idx;
 
 	float2& last_element_of_interest = extended_heightfield[pixel_index * output_resolution.z + n_hf_entries-1];
 
@@ -93,7 +93,7 @@ CSG_Resolver::CSG_Resolver(py::array_t<float> extended_heightfield, int n_hf_ent
 	, extended_heightfield_py(&extended_heightfield)
 {
 	extended_heightfield_cpu = get_extended_heightfield_cpu( extended_heightfield );
-	extended_heightfield_gpu = allocate_float2_buffer_on_gpu( buffer_size );
+	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>( buffer_size );
 	cudaMemcpy(extended_heightfield_gpu, extended_heightfield_cpu, sizeof(float2) * buffer_size.x * buffer_size.y * buffer_size.z, cudaMemcpyHostToDevice);
 }
 

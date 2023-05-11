@@ -17,9 +17,9 @@ Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(std::pair<int, in
 	, n_hf_entries(n_hf_entries)
 	, buffer_length(buffer_length)
 {
-	extended_heightfield_gpu = allocate_float2_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length));
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
+	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length), empty_interval);
+	normal_map_gpu = allocate_buffer_on_gpu<float3>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
+	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 template<class Primitive>

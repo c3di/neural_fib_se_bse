@@ -31,11 +31,7 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	if (idy >= output_resolution.y)
 		return;
 
-	int pixel_index = idx * output_resolution.y + idy;
-
-	// initialize extended hf
-	for (int i = 0; i < buffer_length; i++)
-		extended_heightfield[pixel_index * buffer_length + i] = empty_interval;
+	int pixel_index = idy * output_resolution.x + idx;
 
 	// initialize z_buffer
 	z_buffer[pixel_index] = empty;
@@ -43,7 +39,13 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
+	// search beginning
 	int hit_index = 0;
+	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
+		hit_index++;
+
+	if (debug && idx == 74 && idy == 45)
+		printf("found first free entry in heightfield buffer at index %i\n", hit_index);
 
 	// loop over all spheres
 	for (int sphere_id = 0; sphere_id < n_spheres; sphere_id++)
@@ -131,7 +133,7 @@ void Sphere_Rasterizer::rasterize( float image_plane )
 	int2 grid_size = output_resolution;
 	dim3 block_size(32, 32);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, false );
+	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, true );
 	throw_on_cuda_error();
 }
 

@@ -136,7 +136,8 @@ inline Matrix3x3 MatrixMul( const Matrix3x3& a, const Matrix3x3& b)
 __host__ __device__
 inline float3 MatrixMul( const Matrix3x3& a, float3 b)
 {
-    return make_float3( getDotProduct( a.m_row[0], b ), getDotProduct( a.m_row[1], b ), getDotProduct( a.m_row[2], b ) );
+    Matrix3x3 transA = getTranspose(a);
+    return make_float3( getDotProduct(transA.m_row[0], b ), getDotProduct(transA.m_row[1], b ), getDotProduct(transA.m_row[2], b ) );
 }
 
 __host__ __device__

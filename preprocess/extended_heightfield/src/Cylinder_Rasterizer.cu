@@ -60,11 +60,7 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 	if (idy >= output_resolution.y)
 		return;
 
-	int pixel_index = idx * output_resolution.y + idy;
-
-	// initialize extended hf
-	for (int i = 0; i < buffer_length; i++)
-		extended_heightfield[pixel_index * buffer_length + i] = empty_interval;
+	int pixel_index = idy * output_resolution.x + idx;
 
 	// initialize z_buffer
 	z_buffer[pixel_index] = empty;
@@ -72,7 +68,13 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
+	// search beginning
 	int hit_index = 0;
+	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
+		hit_index++;
+
+	if (debug && idx == debug_position.x && idy == debug_position.y)
+		printf("found first free entry in heightfield buffer at index %i\n", hit_index);
 
 	// loop over all spheres
 	for (int primitive_id = 0; primitive_id < n_primitives; primitive_id++)
@@ -158,7 +160,7 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			if ((side_entry_point.z >= -cylinder.l) && (side_entry_point.z <= cylinder.l))
 			{
 				side_hit0 = true;
-				normal = make_float3(side_entry_point.y, side_entry_point.x, 0.0f);
+				normal = make_float3(side_entry_point.x / cylinder.r, side_entry_point.y / cylinder.r, 0.0f);
 			}
 			if ((side_exit_point.z >= -cylinder.l) && (side_exit_point.z <= cylinder.l))
 				side_hit1 = true;
@@ -207,8 +209,14 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			}
 			else
 			{
+				if (debug && idx == debug_position.x && idy == debug_position.y) {
+					printf("      normal object space %.2f %.2f %.2f\n", normal.x, normal.y, normal.z);
+				}
 				normal = MatrixMul(object_to_world, normal);
 				normal = getNormalizedVec(normal);
+				if (debug && idx == debug_position.x && idy == debug_position.y) {
+					printf("      normal transfomed   %.2f %.2f %.2f\n", normal.x, normal.y, normal.z);
+				}
 				if (normal.z < 0.0f)
 					normal = -1.0f * normal;
 				normal_map[pixel_index] = normal;
@@ -217,6 +225,9 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 		if (hit_index > buffer_length)
 			return;
+	}
+	if (debug && idx == debug_position.x && idy == debug_position.y) {
+		printf("final normal %.2f %.2f %.2f\n", normal_map[pixel_index].x, normal_map[pixel_index].y, normal_map[pixel_index].z);
 	}
 }
 
@@ -239,7 +250,7 @@ void Cylinder_Rasterizer::rasterize( float image_plane )
 	int2 grid_size = output_resolution;
 	dim3 block_size(16, 16);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_cylinder_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, false, make_int2(425, 415) );
+	rasterize_cylinder_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, true, make_int2(425, 425) );
 	throw_on_cuda_error();
 }
 

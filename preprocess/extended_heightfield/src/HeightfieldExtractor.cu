@@ -22,7 +22,7 @@ __global__ void collect_result_kernel( float2* extended_heightfield, float2* res
 	if (idy >= output_resolution.y)
 		return;
 
-	int pixel_index = idx * output_resolution.y + idy;
+	int pixel_index = idy * output_resolution.x + idx;
 	for (int i = 0; i < n_hf_entries; i++)
 	{
 		result[pixel_index * n_hf_entries + i] = extended_heightfield[pixel_index * output_resolution.z + i];
@@ -34,11 +34,11 @@ HeightFieldExtractor::HeightFieldExtractor( std::pair<int, int> output_resolutio
 	, n_hf_entries(n_hf_entries)
 	, max_buffer_length(max_buffer_length)
 {
-	extended_heightfield_gpu = allocate_float2_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length));
-	result_gpu = allocate_float2_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), n_hf_entries));
+	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), empty_interval);
+	result_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), n_hf_entries));
 	csg_resolver = new CSG_Resolver(extended_heightfield_gpu, make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), n_hf_entries );
-	z_buffer_gpu = allocate_float_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	normal_map_gpu = allocate_float3_buffer_on_gpu(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
+	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
+	normal_map_gpu = allocate_buffer_on_gpu<float3>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
 HeightFieldExtractor::~HeightFieldExtractor()
