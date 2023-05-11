@@ -2,22 +2,22 @@
 
 #include "HeightFieldExtractor.h"
 #include "CSG_Resolver.h"
-#include "Sphere_Rasterizer.h"
-#include "Cylinder_Rasterizer.h"
+#include "Sphere_Intersector.h"
+#include "Cylinder_Intersector.h"
 
 namespace py = pybind11;
 
 PYBIND11_MODULE(extended_heightfield, m) 
 {
     // rasterizer API
-    py::class_<Sphere_Rasterizer>(m, "Sphere_Rasterizer")
+    py::class_<Sphere_Intersector>(m, "Sphere_Rasterizer")
         .def(py::init<std::pair<int, int>, int, int>())
-        .def("rasterize", &Sphere_Rasterizer::rasterize_py, py::arg("image_plane"));
+        .def("rasterize", &Sphere_Intersector::rasterize_py, py::arg("image_plane"));
 
-    py::class_<Cylinder_Rasterizer>(m, "Cylinder_Rasterizer")
+    py::class_<Cylinder_Intersector>(m, "Cylinder_Rasterizer")
         .def(py::init<std::pair<int, int>, int, int>())
-        .def("rasterize", &Cylinder_Rasterizer::rasterize_py, py::arg("image_plane"))
-        .def("get_extended_height_field", &Cylinder_Rasterizer::get_extended_height_field_py);
+        .def("rasterize", &Cylinder_Intersector::rasterize_py, py::arg("image_plane"))
+        .def("get_extended_height_field", &Cylinder_Intersector::get_extended_height_field_py);
 
     py::class_<HeightFieldExtractor>(m, "HeightFieldExtractor")
         .def(py::init<std::pair<int, int>, int, int>())

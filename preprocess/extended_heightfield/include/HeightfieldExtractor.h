@@ -10,9 +10,9 @@
 #include <vector>
 #include <tuple>
 
-class Rasterizer;
-class Sphere_Rasterizer;
-class Cylinder_Rasterizer;
+class Intersector;
+class Sphere_Intersector;
+class Cylinder_Intersector;
 class CSG_Resolver;
 
 #ifdef extended_heightfield_EXPORTS
@@ -43,7 +43,7 @@ protected:
 	void call_result_collection_kernel();
 
 protected:
-	std::vector<Rasterizer*> rasterizer;
+	std::vector<Intersector*> rasterizer;
 	CSG_Resolver* csg_resolver;
 
 	float2* extended_heightfield_gpu;

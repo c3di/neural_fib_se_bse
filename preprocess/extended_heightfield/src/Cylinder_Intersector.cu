@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Cylinder_Rasterizer.h"
+#include "Cylinder_Intersector.h"
 
 #include "cuda_utils.h"
 #include "cuda_matrix.h"
@@ -38,7 +38,8 @@ __device__ inline bool quadratic(float a, float b, float c, float& t0, float& t1
 	return true;
 }
 
-/* The rasterizer performs z-buffer rasterization by brute force looping all primitives. 
+/* The intersector computes the intersection points by brute force intersecting all cylinders against a ray in positive z direction.
+*  The operation is implemented by inverse transforming the ray, the intersecting the ray against a standard (z-up) cylinder.
 */
 __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 								        int n_primitives,
@@ -231,21 +232,21 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 	}
 }
 
-Cylinder_Rasterizer::Cylinder_Rasterizer(std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: Abstract_Rasterizer<Cylinder>(output_resolution, n_hf_entries, max_buffer_length )
+Cylinder_Intersector::Cylinder_Intersector(std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+	: Abstract_Intersector<Cylinder>(output_resolution, n_hf_entries, max_buffer_length )
 {
 }
 
-Cylinder_Rasterizer::Cylinder_Rasterizer(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: Abstract_Rasterizer<Cylinder>(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
+Cylinder_Intersector::Cylinder_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+	: Abstract_Intersector<Cylinder>(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
 {
 }
 
-Cylinder_Rasterizer::~Cylinder_Rasterizer()
+Cylinder_Intersector::~Cylinder_Intersector()
 {
 }
 
-void Cylinder_Rasterizer::rasterize( float image_plane )
+void Cylinder_Intersector::rasterize( float image_plane )
 {
 	int2 grid_size = output_resolution;
 	dim3 block_size(16, 16);
@@ -254,7 +255,7 @@ void Cylinder_Rasterizer::rasterize( float image_plane )
 	throw_on_cuda_error();
 }
 
-void Cylinder_Rasterizer::assign_aabb()
+void Cylinder_Intersector::assign_aabb()
 {
 	for (Cylinder& cylinder : primitives_cpu)
 	{

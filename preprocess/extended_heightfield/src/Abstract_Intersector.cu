@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Abstract_Rasterizer.h"
+#include "Abstract_Intersector.h"
 
 #include "cuda_utils.h"
 
@@ -12,7 +12,7 @@
 #include <string>
 
 template<class Primitive>
-Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length)
+Abstract_Intersector<Primitive>::Abstract_Intersector<Primitive>(std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length)
 	: output_resolution(make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution)))
 	, n_hf_entries(n_hf_entries)
 	, buffer_length(buffer_length)
@@ -23,7 +23,7 @@ Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(std::pair<int, in
 }
 
 template<class Primitive>
-Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length)
+Abstract_Intersector<Primitive>::Abstract_Intersector<Primitive>(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length)
 	: extended_heightfield_gpu(extended_heightfield_gpu)
 	, z_buffer_gpu(z_buffer_gpu)
 	, normal_map_gpu(normal_map_gpu)
@@ -34,7 +34,7 @@ Abstract_Rasterizer<Primitive>::Abstract_Rasterizer<Primitive>(float2* extended_
 }
 
 template<class Primitive>
-void Abstract_Rasterizer<Primitive>::add_primitives(std::vector<Primitive>& primitives)
+void Abstract_Intersector<Primitive>::add_primitives(std::vector<Primitive>& primitives)
 {
 	primitives_cpu = primitives;
 	n_primitives = (int)primitives.size();
@@ -43,7 +43,7 @@ void Abstract_Rasterizer<Primitive>::add_primitives(std::vector<Primitive>& prim
 }
 
 template<class Primitive>
-void Abstract_Rasterizer<Primitive>::add_primitives_py(py::array& primitives)
+void Abstract_Intersector<Primitive>::add_primitives_py(py::array& primitives)
 {
 	allocate_primitives_cpu(primitives);
 	presort_primitives();
@@ -51,20 +51,20 @@ void Abstract_Rasterizer<Primitive>::add_primitives_py(py::array& primitives)
 }
 
 template<class Primitive>
-Abstract_Rasterizer<Primitive>::~Abstract_Rasterizer<Primitive>()
+Abstract_Intersector<Primitive>::~Abstract_Intersector<Primitive>()
 {
 	// todo fix leaks
 }
 
 template<class Primitive>
-std::pair< py::array_t<float>, py::array_t<float> >  Abstract_Rasterizer<Primitive>::rasterize_py( float image_plane )
+std::pair< py::array_t<float>, py::array_t<float> >  Abstract_Intersector<Primitive>::rasterize_py( float image_plane )
 {
 	rasterize( image_plane );
 	return std::pair<py::array_t<float>, py::array_t<float> >(get_extended_height_field_py(), get_normal_map_py());
 }
 
 template<class Primitive>
-py::array_t<float> Abstract_Rasterizer<Primitive>::get_normal_map_py()
+py::array_t<float> Abstract_Intersector<Primitive>::get_normal_map_py()
 {
 	auto normal_map_py = create_py_array(output_resolution.x, output_resolution.y, 3);
 	cudaMemcpy(normal_map_py.request().ptr, normal_map_gpu, sizeof(float3) * output_resolution.x * output_resolution.y * 1, cudaMemcpyDeviceToHost);
@@ -72,7 +72,7 @@ py::array_t<float> Abstract_Rasterizer<Primitive>::get_normal_map_py()
 }
 
 template<class Primitive>
-std::vector<float> Abstract_Rasterizer<Primitive>::get_normal_map()
+std::vector<float> Abstract_Intersector<Primitive>::get_normal_map()
 {
 	std::vector<float> normal_map_cpu(3 * output_resolution.x * output_resolution.y );
 	cudaMemcpy(&normal_map_cpu[0], normal_map_gpu, sizeof(float3) * output_resolution.x * output_resolution.y * 1, cudaMemcpyDeviceToHost);
@@ -80,7 +80,7 @@ std::vector<float> Abstract_Rasterizer<Primitive>::get_normal_map()
 }
 
 template<class Primitive>
-py::array_t<float> Abstract_Rasterizer<Primitive>::get_extended_height_field_py()
+py::array_t<float> Abstract_Intersector<Primitive>::get_extended_height_field_py()
 {
 	auto extended_hf_py = create_py_array(output_resolution.x, output_resolution.y, buffer_length * 2);
 	cudaMemcpy(extended_hf_py.request().ptr, extended_heightfield_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * buffer_length, cudaMemcpyDeviceToHost);
@@ -88,7 +88,7 @@ py::array_t<float> Abstract_Rasterizer<Primitive>::get_extended_height_field_py(
 }
 
 template<class Primitive>
-void Abstract_Rasterizer<Primitive>::allocate_primitives_cpu(py::array& primitives)
+void Abstract_Intersector<Primitive>::allocate_primitives_cpu(py::array& primitives)
 {
 	py::buffer_info info = primitives.request();
 	if (info.ndim != 2)
@@ -111,7 +111,7 @@ void Abstract_Rasterizer<Primitive>::allocate_primitives_cpu(py::array& primitiv
 }
 
 template<class Primitive>
-Primitive* Abstract_Rasterizer<Primitive>::allocate_primitives_on_gpu( const std::vector<Primitive>& primitives_cpu )
+Primitive* Abstract_Intersector<Primitive>::allocate_primitives_on_gpu( const std::vector<Primitive>& primitives_cpu )
 {
 	Primitive* ptr_gpu;
 	cudaMalloc((void**)&ptr_gpu, sizeof(Primitive) * n_primitives);
@@ -120,7 +120,7 @@ Primitive* Abstract_Rasterizer<Primitive>::allocate_primitives_on_gpu( const std
 }
 
 template<class Primitive>
-void Abstract_Rasterizer<Primitive>::presort_primitives()
+void Abstract_Intersector<Primitive>::presort_primitives()
 {
 	assign_aabb();
 	if (primitives_cpu.size() == 0)
@@ -130,5 +130,5 @@ void Abstract_Rasterizer<Primitive>::presort_primitives()
 
 #include "sphere.h"
 #include "cylinder.h"
-template class Abstract_Rasterizer<Sphere>;
-template class Abstract_Rasterizer<Cylinder>;
+template class Abstract_Intersector<Sphere>;
+template class Abstract_Intersector<Cylinder>;

@@ -8,7 +8,7 @@
 #include <vector>
 #include <tuple>
 
-class Rasterizer
+class Intersector
 {
 public:
 	virtual std::pair< py::array_t<float>, py::array_t<float> > rasterize_py(float image_plane) = 0;
@@ -19,12 +19,12 @@ public:
 };
 
 template<class Primitive>
-class Abstract_Rasterizer : public Rasterizer
+class Abstract_Intersector : public Intersector
 {
 public:
-	Abstract_Rasterizer(std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length = 64);
-	Abstract_Rasterizer(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length = 64);
-	virtual ~Abstract_Rasterizer();
+	Abstract_Intersector(std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length = 64);
+	Abstract_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int buffer_length = 64);
+	virtual ~Abstract_Intersector();
 
 	virtual void add_primitives(std::vector<Primitive>& primitives);
 	virtual void add_primitives_py(py::array& primitives);
