@@ -11,8 +11,8 @@
 class Intersector
 {
 public:
-	virtual std::pair< py::array_t<float>, py::array_t<float> > rasterize_py(float image_plane) = 0;
-	virtual void rasterize(float image_plane) = 0;
+	virtual std::pair< py::array_t<float>, py::array_t<float> > intersect_py(float image_plane) = 0;
+	virtual void intersect(float image_plane) = 0;
 	virtual py::array_t<float> get_normal_map_py() = 0;
 	virtual std::vector<float> get_normal_map() = 0;
 	virtual py::array_t<float> get_extended_height_field_py() = 0;
@@ -29,8 +29,8 @@ public:
 	virtual void add_primitives(std::vector<Primitive>& primitives);
 	virtual void add_primitives_py(py::array& primitives);
 
-	virtual std::pair< py::array_t<float>, py::array_t<float> > rasterize_py( float image_plane );
-	virtual void rasterize( float image_plane ) = 0;
+	virtual std::pair< py::array_t<float>, py::array_t<float> > intersect_py( float image_plane );
+	virtual void intersect( float image_plane ) = 0;
 
 	virtual py::array_t<float> get_normal_map_py();
 	virtual std::vector<float> get_normal_map();

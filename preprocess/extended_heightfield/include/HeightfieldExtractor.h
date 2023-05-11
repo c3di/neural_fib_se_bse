@@ -35,7 +35,7 @@ public:
 
 	std::pair< std::vector<float>, std::vector<float>> extract_data_representation(float image_plane);
 	std::pair< py::array_t<float>, py::array_t<float>> extract_data_representation_py(float image_plane);
-	void rasterize(float image_plane );
+	void intersect(float image_plane );
 
 protected:
 	py::array_t<float> collect_extended_heightfield_py();
@@ -43,7 +43,7 @@ protected:
 	void call_result_collection_kernel();
 
 protected:
-	std::vector<Intersector*> rasterizer;
+	std::vector<Intersector*> intersectors;
 	CSG_Resolver* csg_resolver;
 
 	float2* extended_heightfield_gpu;

@@ -18,7 +18,7 @@ public:
 	Sphere_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
 	virtual ~Sphere_Intersector();
 
-	virtual void rasterize( float image_plane ) override;
+	virtual void intersect( float image_plane ) override;
 
 protected:
 	virtual void assign_aabb() override;

@@ -57,9 +57,9 @@ Abstract_Intersector<Primitive>::~Abstract_Intersector<Primitive>()
 }
 
 template<class Primitive>
-std::pair< py::array_t<float>, py::array_t<float> >  Abstract_Intersector<Primitive>::rasterize_py( float image_plane )
+std::pair< py::array_t<float>, py::array_t<float> >  Abstract_Intersector<Primitive>::intersect_py( float image_plane )
 {
-	rasterize( image_plane );
+	intersect( image_plane );
 	return std::pair<py::array_t<float>, py::array_t<float> >(get_extended_height_field_py(), get_normal_map_py());
 }
 

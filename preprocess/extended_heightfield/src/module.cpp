@@ -12,11 +12,11 @@ PYBIND11_MODULE(extended_heightfield, m)
     // rasterizer API
     py::class_<Sphere_Intersector>(m, "Sphere_Rasterizer")
         .def(py::init<std::pair<int, int>, int, int>())
-        .def("rasterize", &Sphere_Intersector::rasterize_py, py::arg("image_plane"));
+        .def("intersect", &Sphere_Intersector::intersect_py, py::arg("image_plane"));
 
     py::class_<Cylinder_Intersector>(m, "Cylinder_Rasterizer")
         .def(py::init<std::pair<int, int>, int, int>())
-        .def("rasterize", &Cylinder_Intersector::rasterize_py, py::arg("image_plane"))
+        .def("intersect", &Cylinder_Intersector::intersect_py, py::arg("image_plane"))
         .def("get_extended_height_field", &Cylinder_Intersector::get_extended_height_field_py);
 
     py::class_<HeightFieldExtractor>(m, "HeightFieldExtractor")

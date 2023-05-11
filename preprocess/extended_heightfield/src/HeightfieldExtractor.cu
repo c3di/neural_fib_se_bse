@@ -54,46 +54,46 @@ void HeightFieldExtractor::add_spheres_py(py::array& spheres)
 {
 	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(spheres);
-	rasterizer.push_back(method);
+	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_spheres(std::vector<Sphere>& spheres)
 {
 	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(spheres);
-	rasterizer.push_back(method);
+	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cylinders_py(py::array& cylinders)
 {
 	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(cylinders);
-	rasterizer.push_back(method);
+	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cylinders(std::vector<Cylinder>& cylinders)
 {
 	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(cylinders);
-	rasterizer.push_back(method);
+	intersectors.push_back(method);
 }
 
 std::pair<std::vector<float>, std::vector<float>> HeightFieldExtractor::extract_data_representation(float image_plane)
 {
-	rasterize(image_plane);
-	return std::pair<std::vector<float>, std::vector<float>>(collect_extended_heightfield(), rasterizer[0]->get_normal_map());
+	intersect(image_plane);
+	return std::pair<std::vector<float>, std::vector<float>>(collect_extended_heightfield(), intersectors[0]->get_normal_map());
 }
 
 std::pair< py::array_t<float>, py::array_t<float>>  HeightFieldExtractor::extract_data_representation_py(float image_plane)
 {
-	rasterize( image_plane );
-	return std::pair< py::array_t<float>, py::array_t<float>>( collect_extended_heightfield_py(), rasterizer[0]->get_normal_map_py() );
+	intersect( image_plane );
+	return std::pair< py::array_t<float>, py::array_t<float>>( collect_extended_heightfield_py(), intersectors[0]->get_normal_map_py() );
 }
 
-void HeightFieldExtractor::rasterize(float image_plane)
+void HeightFieldExtractor::intersect(float image_plane)
 {
-	for ( auto rasterizer : rasterizer )
-		rasterizer->rasterize( image_plane );
+	for ( auto intersectors : intersectors )
+		intersectors->intersect( image_plane );
 	csg_resolver->resolve_csg(image_plane);
 }
 

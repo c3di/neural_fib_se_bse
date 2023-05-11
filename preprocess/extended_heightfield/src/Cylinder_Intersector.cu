@@ -246,7 +246,7 @@ Cylinder_Intersector::~Cylinder_Intersector()
 {
 }
 
-void Cylinder_Intersector::rasterize( float image_plane )
+void Cylinder_Intersector::intersect( float image_plane )
 {
 	int2 grid_size = output_resolution;
 	dim3 block_size(16, 16);

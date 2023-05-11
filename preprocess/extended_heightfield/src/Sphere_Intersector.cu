@@ -128,7 +128,7 @@ Sphere_Intersector::~Sphere_Intersector()
 {
 }
 
-void Sphere_Intersector::rasterize( float image_plane )
+void Sphere_Intersector::intersect( float image_plane )
 {
 	int2 grid_size = output_resolution;
 	dim3 block_size(32, 32);
