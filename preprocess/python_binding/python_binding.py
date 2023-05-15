@@ -3,6 +3,7 @@ import random
 import math
 from PIL import Image
 import time
+import numpy.lib.recfunctions as rf
 
 print("attempting import")
 
@@ -15,8 +16,8 @@ print("import successful")
 
 # spheres = np.array( [ [8.0,4.0,4.0,2.0], [8.0,4.0,1.0,2.0], [8.0,4.0,21.0,2.0], [8.0,4.0,16.0,2.0], [8.0,4.0,0.0,2.0], [8.0,4.0,6.0,2.0], [8.0,4.0,18.5,2.0], [8.0,4.0,256,2.0], [8.0,4.0,512,2.0] ] )
 
-# filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"
-filename = "data/Cylinder_Vv03_r5-10_h100-150_homogen_ITWMconfig.txt"
+filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"
+# filename = "data/Cylinder_Vv03_r5-10_h100-150_homogen_ITWMconfig.txt"
 file = open(filename)
 
 def read_primitives( file, primitive_size, n_items ):
@@ -51,11 +52,16 @@ stop = time.perf_counter()
 print(f"done preprocessing in {stop-start:0.3f} sec")
 
 for z in range(extended_heightfield.shape[2]):
-    entry_0 = extended_heightfield[:,:,z].astype(np.uint16)
+    entry_0 = rf.structured_to_unstructured(extended_heightfield[:,:,z]);
+    entry_0 = entry_0[:,:,0].astype(np.uint16)
     img = Image.fromarray(entry_0, "I;16")
     img.save("output/integrated_"+str(z)+".tif");
 
+print("normal_map", normal_map.shape, normal_map .dtype)
+normal_map = normal_map.squeeze(2)
+normal_map = rf.structured_to_unstructured( normal_map );
 normal_map = ( normal_map + 1.0 ) * 127.5
 normal = normal_map.astype(np.uint8)
+print("normal_map", normal_map.shape, normal_map .dtype)
 img = Image.fromarray(normal, "RGB")
-img.save("output/norrmal.tif");
+img.save("output/normal.tif");

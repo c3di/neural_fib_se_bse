@@ -24,7 +24,7 @@ class CSG_Resolver;
 class HeightFieldExtractor
 {
 public:
-	HeightFieldExtractor(std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
+	HeightFieldExtractor(std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length = 64);
 	~HeightFieldExtractor();
 
 	void add_spheres_py(py::array& spheres);
@@ -33,13 +33,13 @@ public:
 	void add_cylinders_py(py::array& cylinders);
 	void add_cylinders(std::vector<Cylinder>& cylinders);
 
-	std::pair< std::vector<float>, std::vector<float>> extract_data_representation(float image_plane);
-	std::pair< py::array_t<float>, py::array_t<float>> extract_data_representation_py(float image_plane);
+	std::tuple< std::vector<float2>, std::vector<float3>> extract_data_representation(float image_plane);
+	std::tuple< py::array_t<float2>, py::array_t<float3>> extract_data_representation_py(float image_plane);
 	void intersect(float image_plane );
 
 protected:
-	py::array_t<float> collect_extended_heightfield_py();
-	std::vector<float> collect_extended_heightfield();
+	py::array_t<float2> collect_extended_heightfield_py();
+	std::vector<float2> collect_extended_heightfield();
 	void call_result_collection_kernel();
 
 protected:

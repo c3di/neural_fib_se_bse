@@ -114,12 +114,12 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	}
 }
 
-Sphere_Intersector::Sphere_Intersector(std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+Sphere_Intersector::Sphere_Intersector(std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
 	: Abstract_Intersector<Sphere>(output_resolution, n_hf_entries, max_buffer_length )
 {
 }
 
-Sphere_Intersector::Sphere_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+Sphere_Intersector::Sphere_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
 	: Abstract_Intersector<Sphere>(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
 {
 }
@@ -133,7 +133,7 @@ void Sphere_Intersector::intersect( float image_plane )
 	int2 grid_size = output_resolution;
 	dim3 block_size(32, 32);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield_gpu, normal_map_gpu, z_buffer_gpu, output_resolution, buffer_length, n_hf_entries, image_plane, true );
+	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer->gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false );
 	throw_on_cuda_error();
 }
 

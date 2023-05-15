@@ -44,7 +44,7 @@ int main( int argc, char* argv[] )
     ifs.close();
 
     std::cout << "performing preprocessing" << std::endl;
-    auto preprocessor = new HeightFieldExtractor( std::pair<int, int>(850, 850), 2, 64 );
+    auto preprocessor = new HeightFieldExtractor( std::tuple<int, int>(850, 850), 2, 64 );
     preprocessor->add_spheres(spheres);
     preprocessor->add_cylinders(cylinders);
 

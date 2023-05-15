@@ -29,7 +29,7 @@ __global__ void collect_result_kernel( float2* extended_heightfield, float2* res
 	}
 }
 
-HeightFieldExtractor::HeightFieldExtractor( std::pair<int, int> output_resolution, int n_hf_entries, int max_buffer_length )
+HeightFieldExtractor::HeightFieldExtractor( std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length )
 	: output_resolution( make_int2(std::get<0>(output_resolution), std::get<1>(output_resolution)) )
 	, n_hf_entries(n_hf_entries)
 	, max_buffer_length(max_buffer_length)
@@ -43,51 +43,51 @@ HeightFieldExtractor::HeightFieldExtractor( std::pair<int, int> output_resolutio
 
 HeightFieldExtractor::~HeightFieldExtractor()
 {
+	cudaFree(normal_map_gpu);
+	cudaFree(z_buffer_gpu);
 	delete csg_resolver;
-	delete z_buffer_gpu;
-	delete normal_map_gpu;
-	// delete sphere_rasterizer;
-	// delete result_gpu;
+	cudaFree(result_gpu);
+	cudaFree(extended_heightfield_gpu);
 }
 
 void HeightFieldExtractor::add_spheres_py(py::array& spheres)
 {
-	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(spheres);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_spheres(std::vector<Sphere>& spheres)
 {
-	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(spheres);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cylinders_py(py::array& cylinders)
 {
-	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(cylinders);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cylinders(std::vector<Cylinder>& cylinders)
 {
-	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(cylinders);
 	intersectors.push_back(method);
 }
 
-std::pair<std::vector<float>, std::vector<float>> HeightFieldExtractor::extract_data_representation(float image_plane)
+std::tuple<std::vector<float2>, std::vector<float3>> HeightFieldExtractor::extract_data_representation(float image_plane)
 {
 	intersect(image_plane);
-	return std::pair<std::vector<float>, std::vector<float>>(collect_extended_heightfield(), intersectors[0]->get_normal_map());
+	return std::tuple<std::vector<float2>, std::vector<float3>>(collect_extended_heightfield(), intersectors[0]->get_normal_map());
 }
 
-std::pair< py::array_t<float>, py::array_t<float>>  HeightFieldExtractor::extract_data_representation_py(float image_plane)
+std::tuple< py::array_t<float2>, py::array_t<float3>>  HeightFieldExtractor::extract_data_representation_py(float image_plane)
 {
 	intersect( image_plane );
-	return std::pair< py::array_t<float>, py::array_t<float>>( collect_extended_heightfield_py(), intersectors[0]->get_normal_map_py() );
+	return std::tuple< py::array_t<float2>, py::array_t<float3>>( collect_extended_heightfield_py(), intersectors[0]->get_normal_map_py() );
 }
 
 void HeightFieldExtractor::intersect(float image_plane)
@@ -97,7 +97,7 @@ void HeightFieldExtractor::intersect(float image_plane)
 	csg_resolver->resolve_csg(image_plane);
 }
 
-py::array_t<float> HeightFieldExtractor::collect_extended_heightfield_py()
+py::array_t<float2> HeightFieldExtractor::collect_extended_heightfield_py()
 {
 	call_result_collection_kernel();
 	auto pyarray = create_py_array(output_resolution.x, output_resolution.y, n_hf_entries * 2);
@@ -105,10 +105,10 @@ py::array_t<float> HeightFieldExtractor::collect_extended_heightfield_py()
 	return pyarray;
 }
 
-std::vector<float> HeightFieldExtractor::collect_extended_heightfield()
+std::vector<float2> HeightFieldExtractor::collect_extended_heightfield()
 {
 	call_result_collection_kernel();
-	std::vector<float> result_cpu(2 * output_resolution.x * output_resolution.y * n_hf_entries);
+	std::vector<float2> result_cpu( output_resolution.x * output_resolution.y * n_hf_entries);
 	cudaMemcpy(&result_cpu[0], result_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * n_hf_entries, cudaMemcpyDeviceToHost);
 	return result_cpu;
 }	
