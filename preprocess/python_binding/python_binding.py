@@ -1,3 +1,5 @@
+print("standard import")
+
 import numpy as np
 import random
 import math
@@ -16,33 +18,40 @@ print("import successful")
 
 # spheres = np.array( [ [8.0,4.0,4.0,2.0], [8.0,4.0,1.0,2.0], [8.0,4.0,21.0,2.0], [8.0,4.0,16.0,2.0], [8.0,4.0,0.0,2.0], [8.0,4.0,6.0,2.0], [8.0,4.0,18.5,2.0], [8.0,4.0,256,2.0], [8.0,4.0,512,2.0] ] )
 
-filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"
-# filename = "data/Cylinder_Vv03_r5-10_h100-150_homogen_ITWMconfig.txt"
-file = open(filename)
+do_read = False
 
-def read_primitives( file, primitive_size, n_items ):
-    primitives = np.empty( (n_items, primitive_size), dtype=np.float32 )
-    for count in range( n_items ):
-        line = next(file)
-        items = line.split("\t")
-        i = int(items[0])
-        for j in range(1, primitive_size+1):
-            primitives[int(i)-1,j-1] = float( items[j] )
-    return primitives
+if do_read:
+    filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"
+    # filename = "data/Cylinder_Vv03_r5-10_h100-150_homogen_ITWMconfig.txt"
+    file = open(filename)
 
-n_spheres   = int( next(file) )
-n_cylinders = int( next(file) )
+    def read_primitives( file, primitive_size, n_items ):
+        primitives = np.empty( (n_items, primitive_size), dtype=np.float32 )
+        for count in range( n_items ):
+            line = next(file)
+            items = line.split("\t")
+            i = int(items[0])
+            for j in range(1, primitive_size+1):
+                primitives[int(i)-1,j-1] = float( items[j] )
+        return primitives
 
-spheres   = read_primitives(file, 4, n_spheres);
-cylinders = read_primitives(file, 8, n_cylinders);
+    n_spheres   = int( next(file) )
+    n_cylinders = int( next(file) )
 
-# cylinders = np.empty( (1, 8), dtype=np.float32 )
-# cylinders[0] = [ 425.0, 425.0, 400.0, 1.57079632679, 0.0, 0.0, 50.0, 150.0 ]
+    spheres   = read_primitives(file, 4, n_spheres);
+    cylinders = read_primitives(file, 8, n_cylinders);
+
+n_spheres = 0
+cylinders = np.empty( (2, 9), dtype=np.float32 )
+
+pi_8 = 0.78539816339 / 2
+n_cylinders = 2
+cylinders[0] = [ 425.0, 425.0, 400.0, 0.0, 1.0, 0.0, pi_8, 50.0, 150.0 ]
+cylinders[1] = [ 425.0, 425.0, 400.0, 1.0, 0.0, 0.0, pi_8, 50.0, 150.0 ]
 
 print("performing preprocessing")
 start = time.perf_counter()
 preprocessor = HeightFieldExtractor( (850,850), 2, 256 )
-print(spheres.shape)
 if n_spheres > 0:
     preprocessor.add_spheres( spheres )
 if n_cylinders > 0:

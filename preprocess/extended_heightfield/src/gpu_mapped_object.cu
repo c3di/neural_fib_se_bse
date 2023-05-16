@@ -3,6 +3,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <vector>
+#include <iostream>
 #include <stdexcept>
 
 #include "gpu_mapped_object.h"
@@ -87,6 +88,7 @@ void GPUMappedObject<DTYPE>::push_on_gpu()
 template<typename DTYPE>
 void GPUMappedObject<DTYPE>::pull_from_gpu()
 {
+	std::cout << "CUDA memcopy "<< dimensions.x << "x" << dimensions.y << "x" << dimensions.z << " items of size " << sizeof(DTYPE) << " total" << sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z << " bytes" << std::endl;
 	cudaMemcpy((void*)_cpu_ptr, (void*) _gpu_ptr, sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z, cudaMemcpyDeviceToHost);
 }
 

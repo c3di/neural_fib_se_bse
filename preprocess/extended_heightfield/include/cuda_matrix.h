@@ -187,6 +187,88 @@ inline Matrix3x3 getFromEulerAngles( float3 angles )
 }
 
 /*****************************************
+                Quaternions
+/*****************************************/
+
+__host__ __device__
+inline Matrix3x3 getMatrixFromQuaternion( float4 quaternion )
+{
+    const float xx = quaternion.x * quaternion.x;
+    const float xy = quaternion.x * quaternion.y;
+    const float xz = quaternion.x * quaternion.z;
+    const float xw = quaternion.x * quaternion.w;
+
+    const float yy = quaternion.y * quaternion.y;
+    const float yz = quaternion.y * quaternion.z;
+    const float yw = quaternion.y * quaternion.w;
+
+    const float zz = quaternion.z * quaternion.z;
+    const float zw = quaternion.z * quaternion.w;
+
+    Matrix3x3 out;
+
+    out.m_row[0] = make_float3(1.0f - 2.0f * (yy + zz),        2.0f * (xy - zw),        2.0f * (xz + yw));
+    out.m_row[1] = make_float3(       2.0f * (xy + zw), 1.0f - 2.0f * (xx + zz),        2.0f * (yz - xw));
+    out.m_row[2] = make_float3(       2.0f * (xz - yw),        2.0f * (yz + xw), 1.0f - 2.0f * (xx + yy));
+
+    return out;
+}
+
+__host__ __device__
+inline float4 getConjugateQuaternion( const float4& quaternion )
+{
+    return make_float4(-quaternion.x, -quaternion.y, -quaternion.z, quaternion.w);
+}
+
+__host__ __device__
+inline float getQuaternionNorm( const float4& quaternion )
+{
+    return sqrtf(quaternion.x * quaternion.x + quaternion.y * quaternion.y + quaternion.z * quaternion.z + quaternion.w * quaternion.w);
+}
+
+__host__ __device__
+inline float4 getInverseQuaternion(const float4& quaternion)
+{
+    const float n = getQuaternionNorm(quaternion);
+    return make_float4(-quaternion.x / n, -quaternion.y / n, -quaternion.z / n, quaternion.w / n);
+}
+
+__host__ __device__
+inline float4 getNormalised( const float4& quaternion )
+{
+    const float n = getQuaternionNorm( quaternion );
+    return make_float4( quaternion.x / n, quaternion.y / n, quaternion.z / n, quaternion.w / n );
+}
+
+__host__ __device__
+inline float4 getMultipliedQuaternions( const float4& q1, const float4& q2 )
+{
+    const float x = q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
+    const float y = -q1.x * q2.z + q1.y * q2.w + q1.z * q2.x + q1.w * q2.y;
+    const float z = q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
+    const float w = -q1.x * q2.x - q1.y * q2.y - q1.z * q2.z + q1.w * q2.w;
+    return make_float4( x, y, z, w );
+}
+
+__host__ __device__
+inline float3 getPointTransformedByQuaternion( const float4& quaternion, const float3& point )
+{
+    const float4 point_in_4d = make_float4(point.x, point.y, point.z, 0.0f);
+    const float4 tmp = getMultipliedQuaternions( quaternion, point_in_4d );
+    const float4 quaternion_inv = getConjugateQuaternion(quaternion);
+    const float4 rotated_point_in_4d = getMultipliedQuaternions(tmp, quaternion_inv);
+    return make_float3( rotated_point_in_4d.x, rotated_point_in_4d.y, rotated_point_in_4d.z );
+}
+
+__host__ __device__
+inline float4 getQuaternionFromAxisAngle( const float3& axis, const float alpha )
+{
+    const float cos_alpha_half = cosf(alpha / 2.0f);
+    const float sin_alpha_half = cosf(alpha / 2.0f);
+    return make_float4( axis.x * sin_alpha_half, axis.y * sin_alpha_half, axis.z * sin_alpha_half, cos_alpha_half );
+}
+
+/*****************************************
                 Test Functions 
 /*****************************************/
 void perform_matrix_test();

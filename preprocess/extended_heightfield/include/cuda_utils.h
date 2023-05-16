@@ -30,6 +30,9 @@ inline int3 as_int3(const std::tuple<int, int, int> p) { return make_int3(std::g
 inline float2 as_float2(const std::tuple<float, float> p) { return make_float2(std::get<0>(p), std::get<1>(p)); };
 inline float3 as_float3(const std::tuple<float, float, float> p) { return make_float3(std::get<0>(p), std::get<1>(p), std::get<2>(p) ); };
 
+inline float4 as_float4(const std::tuple<float, float, float, float> p) { return make_float4(std::get<0>(p), std::get<1>(p), std::get<2>(p), std::get<3>(p) ); };
+inline float4 as_float4(const float p[4]) { return make_float4(p[0], p[1], p[2], p[3]); };
+
 void throw_on_cuda_error();
 
 template<typename T>

@@ -100,11 +100,8 @@ void Abstract_Intersector<Primitive>::allocate_primitives_cpu(py::array& primiti
 	float* ptr = (float*) info.ptr;
 	for (size_t i = 0; i < n_primitives; i++)
 	{
-		for (size_t j = 0; j < Primitive::N_FLOAT_PARAMS; j++)
-		{
-			float* primitive_ptr = (float*) &primitives_cpu[i];
-			primitive_ptr[j] = *(ptr++);
-		}
+		primitives_cpu[i] = ptr;
+		ptr += Primitive::N_FLOAT_PARAMS;
 	}
 }
 
