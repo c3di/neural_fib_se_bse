@@ -53,9 +53,9 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 		const Sphere& sphere = spheres[sphere_id];
 
 		if (debug && idx == 74 && idy == 45)
-			printf("  %i : %.2f %.2f %.2f radius %.2f\n", sphere_id, sphere.x, sphere.y, sphere.z, sphere.r);
+			printf("  %i : %.2f %.2f %.2f radius %.2f\n", sphere_id, sphere.position.x, sphere.position.y, sphere.position.z, sphere.r);
 
-		const float dz = fabsf( sphere.z - image_plane_z);
+		const float dz = fabsf( sphere.position.z - image_plane_z);
 
 		// early termination if sphere behind image plane
 		if ( dz <= -sphere.r )
@@ -65,16 +65,16 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 			printf("    : front of image plance\n");
 
 		// calculate entry and exit point by computing both solutions to r^2 = (x-x0)^2 + (y-y0)^2 + (z-z0)^2
-		const float dx = pixel_x - sphere.x;
-		const float dy = pixel_y - sphere.y;
+		const float dx = pixel_x - sphere.position.x;
+		const float dy = pixel_y - sphere.position.y;
 
 		// check if intersection point exists
 		if (dx * dx + dy * dy > sphere.r * sphere.r)
 			continue;
 
 		const float square_term = sqrtf( sphere.r * sphere.r - dx * dx - dy * dy );
-		float entry = sphere.z - square_term;
-		float exit  = sphere.z + square_term;
+		float entry = sphere.position.z - square_term;
+		float exit  = sphere.position.z + square_term;
 
 		bool cut_case = false;
 		// handle the case that the sphere is cut by the image place 

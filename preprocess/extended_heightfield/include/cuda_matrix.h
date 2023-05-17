@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 /*****************************************
                 Vector
 /*****************************************/
@@ -11,9 +13,21 @@ inline float3 operator+(const float3& a, const float3& b) {
 }
 
 __host__ __device__
+inline float3 operator*(const float3& a, const float& b) {
+
+    return make_float3(a.x * b, a.y * b, a.z * b);
+}
+
+__host__ __device__
 inline float3 operator*(const float& a, const float3& b) {
 
     return make_float3(a * b.x, a * b.y, a * b.z);
+}
+
+__host__ __device__
+inline float3 operator*(const float3& a, const float3& b) {
+
+    return make_float3(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 
 __host__ __device__
@@ -29,10 +43,28 @@ inline float getDotProduct(float3 a, float3 b)
 }
 
 __host__ __device__
-inline float3 getNormalizedVec(const float3 v)
+inline float3 getNormalizedVec(const float3& v)
 {
     float invLen = 1.0f / sqrtf(getDotProduct(v, v));
     return make_float3(v.x * invLen, v.y * invLen, v.z * invLen);
+}
+
+__host__ __device__
+inline float3 getComponentWiseMin(const float3& a, const float3& b)
+{
+    return make_float3( fminf(a.x, b.x), fminf(a.y, b.y), fminf(a.z, b.z) );
+}
+
+__host__ __device__
+inline float3 getComponentWiseMax(const float3& a, const float3& b)
+{
+    return make_float3(fmaxf(a.x, b.x), fmaxf(a.y, b.y), fmaxf(a.z, b.z));
+}
+
+__host__ __device__
+inline float3 getComponentWiseAbs(const float3& a)
+{
+    return make_float3( fabsf(a.x), fabsf(a.y), fabsf(a.z) );
 }
 
 /*****************************************

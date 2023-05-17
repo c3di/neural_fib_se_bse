@@ -44,7 +44,7 @@ int main( int argc, char* argv[] )
         {
             std::getline(ifs, line);
             std::istringstream line_stream(line);
-            line_stream >> id >> cylinder.x >> cylinder.y >> cylinder.z >> cylinder.orientation.x >> cylinder.orientation.y >> cylinder.orientation.z >> cylinder.orientation.w >> cylinder.r >> cylinder.l;
+            line_stream >> id >> cylinder.position.x >> cylinder.position.y >> cylinder.position.z >> cylinder.orientation.x >> cylinder.orientation.y >> cylinder.orientation.z >> cylinder.orientation.w >> cylinder.r >> cylinder.l;
             cylinders.push_back(cylinder);
         }
         ifs.close();
@@ -52,9 +52,9 @@ int main( int argc, char* argv[] )
     else 
     {
         Cylinder cylinder;
-        cylinder.x = 425.0f;
-        cylinder.y = 425.0f;
-        cylinder.z = 400.0f;
+        cylinder.position.x = 425.0f;
+        cylinder.position.y = 425.0f;
+        cylinder.position.z = 400.0f;
         cylinder.orientation = make_float4(0.0, 1.0, 0.0, 0.78539816339f / 2.0f);
         cylinder.r = 50.0f;
         cylinder.l = 150.0f;

@@ -5,14 +5,14 @@
 struct Sphere
 {
 	static const size_t N_FLOAT_PARAMS = 4;
-	float x, y, z;
+	float3 position;
 	float r;
-	inline bool operator()(const Sphere& a, const Sphere& b) const { return a.z + a.r < b.z + b.r; }
+	inline bool operator()(const Sphere& a, const Sphere& b) const { return a.position.z + a.r < b.position.z + b.r; }
 	inline Sphere& operator=(float* data)
 	{
-		x = *(data++);
-		y = *(data++);
-		z = *(data++);
+		position.x = *(data++);
+		position.y = *(data++);
+		position.z = *(data++);
 		r = *(data++);
 		return *this;
 	};

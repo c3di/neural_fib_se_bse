@@ -4,7 +4,6 @@
 
 #include "cuda_utils.h"
 #include "cuda_matrix.h"
-#include "math_functions.h"
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -261,8 +260,12 @@ void Cylinder_Intersector::assign_aabb()
 	for (Cylinder& cylinder : primitives_cpu)
 	{
 		const float3 a = getPointTransformedByQuaternion( cylinder.orientation, make_float3(0.0, 0.0, 1.0) );
-		const float a_dot_a = dot( a, a);
-		const float3 e = cylinder.r * sqrtf(1.0f - a * a / a_dot_a );
-		cylinder.aabb = abs(e);
+		const float a_dot_a = getDotProduct( a, a);
+
+		float3 e;
+		e.x = cylinder.r * sqrtf(1.0f - (a.x * a.x) / a_dot_a);
+		e.y = cylinder.r * sqrtf(1.0f - (a.y * a.y) / a_dot_a);
+		e.z = cylinder.r * sqrtf(1.0f - (a.z * a.z) / a_dot_a);
+		cylinder.aabb = getComponentWiseAbs(e);
 	}
 }
