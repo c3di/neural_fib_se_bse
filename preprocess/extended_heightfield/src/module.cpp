@@ -35,7 +35,8 @@ PYBIND11_MODULE(extended_heightfield, m)
         .def(py::init<std::tuple<int, int>, int, int>())
         .def("extract_data_representation", &HeightFieldExtractor::extract_data_representation_py, py::arg("image_plane"))
         .def("add_spheres",   &HeightFieldExtractor::add_spheres_py,   py::arg("spheres"))
-        .def("add_cylinders", &HeightFieldExtractor::add_cylinders_py, py::arg("cylinders"));
+        .def("add_cylinders", &HeightFieldExtractor::add_cylinders_py, py::arg("cylinders"))
+        .def("add_cuboids",   &HeightFieldExtractor::add_cuboids_py, py::arg("cuboids"));
 
     py::class_<CSG_Resolver>(m, "CSG_Resolver")
         .def(py::init<py::array&, int>())

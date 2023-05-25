@@ -45,9 +45,13 @@ n_spheres = 0
 cylinders = np.empty( (2, 9), dtype=np.float32 )
 
 pi_8 = 0.78539816339 / 2
-n_cylinders = 2
+n_cylinders = 0
 cylinders[0] = [ 425.0, 425.0, 400.0, 0.0, 1.0, 0.0, pi_8, 50.0, 150.0 ]
 cylinders[1] = [ 425.0, 425.0, 400.0, 1.0, 0.0, 0.0, pi_8, 50.0, 150.0 ]
+
+cuboids = np.empty( (1, 10), dtype=np.float32 )
+n_cuboids = 1
+cuboids[0] = [ 425.0, 425.0, 400.0, 0.0, 1.0, 0.0, pi_8, 25.0, 50.0, 100.0 ]
 
 print("performing preprocessing")
 start = time.perf_counter()
@@ -56,6 +60,8 @@ if n_spheres > 0:
     preprocessor.add_spheres( spheres )
 if n_cylinders > 0:
     preprocessor.add_cylinders( cylinders )
+if n_cuboids > 0:
+    preprocessor.add_cuboids( cuboids )
 extended_heightfield, normal_map = preprocessor.extract_data_representation( 0.0 )
 stop = time.perf_counter()
 print(f"done preprocessing in {stop-start:0.3f} sec")

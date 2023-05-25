@@ -44,16 +44,10 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
 		hit_index++;
 
-	if (debug && idx == 74 && idy == 45)
-		printf("found first free entry in heightfield buffer at index %i\n", hit_index);
-
 	// loop over all spheres
 	for (int sphere_id = 0; sphere_id < n_spheres; sphere_id++)
 	{
 		const Sphere& sphere = spheres[sphere_id];
-
-		if (debug && idx == 74 && idy == 45)
-			printf("  %i : %.2f %.2f %.2f radius %.2f\n", sphere_id, sphere.position.x, sphere.position.y, sphere.position.z, sphere.r);
 
 		const float dz = fabsf( sphere.position.z - image_plane_z);
 
@@ -83,9 +77,6 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 			entry = image_plane_z;
 			cut_case = true;
 		}
-
-		if (debug && idx == 74 && idy == 45)
-			printf("    : intersect %.2f - %.2f\n", entry, exit);
 
 		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( entry, exit );
 		hit_index++;

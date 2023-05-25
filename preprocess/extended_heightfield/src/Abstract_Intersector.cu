@@ -125,5 +125,7 @@ void Abstract_Intersector<Primitive>::presort_primitives()
 
 #include "sphere.h"
 #include "cylinder.h"
+#include "cuboid.h"
 template class Abstract_Intersector<Sphere>;
 template class Abstract_Intersector<Cylinder>;
+template class Abstract_Intersector<Cuboid>;

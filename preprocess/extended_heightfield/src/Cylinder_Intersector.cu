@@ -74,9 +74,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
 		hit_index++;
 
-	if (debug && idx == debug_position.x && idy == debug_position.y)
-		printf("found first free entry in heightfield buffer at index %i\n", hit_index);
-
 	// loop over all spheres
 	for (int primitive_id = 0; primitive_id < n_primitives; primitive_id++)
 	{
@@ -90,39 +87,14 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 		float3 ray_origin    = make_float3(pixel_x-cylinder.position.x, pixel_y - cylinder.position.y, image_plane_z - cylinder.position.z);
 		float3 ray_direction = make_float3(0.0f,                        0.0f,                          1.0f);
 
-		if (debug && idx == 74 && idy == 45) 
-		{
-			printf("pixel               %.2f %.2f\n", pixel_x, pixel_y);
-			printf("cylinder            %.2f %.2f %.2f dir %.2f %.2f %.2f %.2f\n", cylinder.position.x, cylinder.position.y, cylinder.position.z, cylinder.orientation.x, cylinder.orientation.y, cylinder.orientation.z, cylinder.orientation.w );
-			printf("original ray origin %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
-		}
-
 		// Matrix3x3 object_to_world = getFromEulerAngles( cylinder.orientation );
 		const float4& object_to_world = cylinder.orientation;
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-		{
-			printf("object_to_world\n");
-			printf("  %.2f %.2f %.2f %.2f\n", object_to_world.x, object_to_world.y, object_to_world.z, object_to_world.w);
-			printf("\n");
-		}
 
 		float4 world_to_object = getInverseQuaternion(object_to_world);
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-		{
-			printf("world_to_object\n");
-			printf("  %.2f %.2f %.2f %.2f\n", world_to_object.x, world_to_object.y, world_to_object.z, world_to_object.w);
-			printf("\n");
-		}
-
 		ray_origin    = getPointTransformedByQuaternion(world_to_object, ray_origin);
 		ray_direction = getPointTransformedByQuaternion(world_to_object, ray_direction);
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("unnormalized ray origin %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
 		ray_direction = getNormalizedVec(ray_direction);
-
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("transformed ray origin %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
 
 		float a = ray_direction.x * ray_direction.x + ray_direction.y * ray_direction.y;
 		float b = 2.0f * (ray_direction.x * ray_origin.x + ray_direction.y * ray_origin.y);
@@ -136,12 +108,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 		const float3 cap_entry_point = ray_origin + cap_t0 * ray_direction;
 		const float3 cap_exit_point  = ray_origin + cap_t1 * ray_direction;
-
-		if (debug && idx == debug_position.x && idy == debug_position.y) 
-		{
-			printf("cap_entry_point %.2f %.2f %.2f / %.2f %.2f %.2f \n", cap_entry_point.x, cap_entry_point.y, cap_entry_point.z, cap_exit_point.x, cap_exit_point.y, cap_exit_point.z);
-			printf("ray origin      %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
-		}
 
 		bool cap_hit0 = (cap_entry_point.x * cap_entry_point.x + cap_entry_point.y * cap_entry_point.y <= cylinder.r * cylinder.r);
 		bool cap_hit1 = (cap_exit_point.x  * cap_exit_point.x  + cap_exit_point.y  * cap_exit_point.y  <= cylinder.r * cylinder.r);
@@ -191,11 +157,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			cut_case = true;
 		}
 
-		if (debug && idx == debug_position.x && idy == debug_position.y) {
-			printf("found intersection cylinder center %.2f %.2f %.2f orientation %.2f %.2f %.2f %.2f radius %.2f length %.2f\n", cylinder.position.x, cylinder.position.y, cylinder.position.z, cylinder.orientation.x, cylinder.orientation.y, cylinder.orientation.z, cylinder.orientation.w, cylinder.r, cylinder.l);
-			printf("      intersection state           cap %i %i side %i %i t0 t1 %.2f %.2f\n", cap_hit0, cap_hit1, side_hit0, side_hit1, t0, t1);
-		}
-
 		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( t0, t1 );
 		hit_index++;
 
@@ -209,14 +170,8 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			}
 			else
 			{
-				if (debug && idx == debug_position.x && idy == debug_position.y) {
-					printf("      normal object space %.2f %.2f %.2f\n", normal.x, normal.y, normal.z);
-				}
 				normal = getPointTransformedByQuaternion(object_to_world, normal);
 				normal = getNormalizedVec(normal);
-				if (debug && idx == debug_position.x && idy == debug_position.y) {
-					printf("      normal transfomed   %.2f %.2f %.2f\n", normal.x, normal.y, normal.z);
-				}
 				if (normal.z < 0.0f)
 					normal = -1.0f * normal;
 				normal_map[pixel_index] = normal;
@@ -225,9 +180,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 		if (hit_index > buffer_length)
 			return;
-	}
-	if (debug && idx == debug_position.x && idy == debug_position.y) {
-		printf("final normal %.2f %.2f %.2f\n", normal_map[pixel_index].x, normal_map[pixel_index].y, normal_map[pixel_index].z);
 	}
 }
 

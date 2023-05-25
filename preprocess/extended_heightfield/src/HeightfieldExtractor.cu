@@ -3,6 +3,7 @@
 #include "HeightFieldExtractor.h"
 #include "Sphere_Intersector.h"
 #include "Cylinder_Intersector.h"
+#include "Cuboid_Intersector.h"
 #include "CSG_Resolver.h"
 
 #include "cuda_utils.h"
@@ -75,6 +76,20 @@ void HeightFieldExtractor::add_cylinders(std::vector<Cylinder>& cylinders)
 {
 	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(cylinders);
+	intersectors.push_back(method);
+}
+
+void HeightFieldExtractor::add_cuboids_py(py::array& cuboids)
+{
+	auto method = new Cuboid_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	method->add_primitives_py(cuboids);
+	intersectors.push_back(method);
+}
+
+void HeightFieldExtractor::add_cuboids(std::vector<Cuboid>& cuboids)
+{
+	auto method = new Cuboid_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	method->add_primitives(cuboids);
 	intersectors.push_back(method);
 }
 

@@ -11,6 +11,7 @@ namespace py = pybind11;
 #include "python_utils.h"
 #include "sphere.h"
 #include "cylinder.h"
+#include "cuboid.h"
 
 #include <vector>
 #include <tuple>
@@ -37,6 +38,9 @@ public:
 
 	void add_cylinders_py(py::array& cylinders);
 	void add_cylinders(std::vector<Cylinder>& cylinders);
+
+	void add_cuboids_py(py::array& cuboids);
+	void add_cuboids(std::vector<Cuboid>& cuboids);
 
 	std::tuple< std::vector<float2>, std::vector<float3>> extract_data_representation(float image_plane);
 	std::tuple< py::array_t<float2>, py::array_t<float3>> extract_data_representation_py(float image_plane);
