@@ -35,8 +35,10 @@ HeightFieldExtractor::HeightFieldExtractor( std::tuple<int, int> output_resoluti
 	, n_hf_entries(n_hf_entries)
 	, max_buffer_length(max_buffer_length)
 {
-	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), empty_interval);
+	int3 extended_heightfield_size = make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length );
+	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(extended_heightfield_size, empty_interval);
 	result_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), n_hf_entries));
+	cudaMallocHost(&result_cpu, sizeof(float2) * extended_heightfield_size.x * extended_heightfield_size.y * n_hf_entries);
 	csg_resolver = new CSG_Resolver(extended_heightfield_gpu, make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), n_hf_entries );
 	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 	normal_map_gpu = allocate_buffer_on_gpu<float3>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
@@ -49,6 +51,7 @@ HeightFieldExtractor::~HeightFieldExtractor()
 	delete csg_resolver;
 	cudaFree(result_gpu);
 	cudaFree(extended_heightfield_gpu);
+	cudaFreeHost(result_cpu);
 }
 
 void HeightFieldExtractor::add_spheres_py(py::array& spheres)
@@ -77,7 +80,7 @@ void HeightFieldExtractor::add_cylinders(std::vector<Cylinder>& cylinders)
 	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(cylinders);
 	intersectors.push_back(method);
-}
+ }
 
 void HeightFieldExtractor::add_cuboids_py(py::array& cuboids)
 {
@@ -93,10 +96,10 @@ void HeightFieldExtractor::add_cuboids(std::vector<Cuboid>& cuboids)
 	intersectors.push_back(method);
 }
 
-std::tuple<std::vector<float2>, std::vector<float3>> HeightFieldExtractor::extract_data_representation(float image_plane)
+std::tuple<float2*, float3*> HeightFieldExtractor::extract_data_representation(float image_plane)
 {
-	intersect(image_plane);
-	return std::tuple<std::vector<float2>, std::vector<float3>>(collect_extended_heightfield(), intersectors[0]->get_normal_map());
+	intersect( image_plane );
+	return std::tuple<float2*, float3*>(collect_extended_heightfield(), intersectors[0]->get_normal_map());
 }
 
 std::tuple< py::array_t<float2>, py::array_t<float3>>  HeightFieldExtractor::extract_data_representation_py(float image_plane)
@@ -107,24 +110,27 @@ std::tuple< py::array_t<float2>, py::array_t<float3>>  HeightFieldExtractor::ext
 
 void HeightFieldExtractor::intersect(float image_plane)
 {
-	for ( auto intersectors : intersectors )
-		intersectors->intersect( image_plane );
+	for (auto intersectors : intersectors) {
+		intersectors->intersect(image_plane);
+		cudaDeviceSynchronize();
+	}
 	csg_resolver->resolve_csg(image_plane);
+	cudaDeviceSynchronize();
 }
 
 py::array_t<float2> HeightFieldExtractor::collect_extended_heightfield_py()
 {
 	call_result_collection_kernel();
+	cudaDeviceSynchronize();
 	auto pyarray = create_py_array(output_resolution.x, output_resolution.y, n_hf_entries * 2);
 	cudaMemcpy(pyarray.request().ptr, result_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * n_hf_entries, cudaMemcpyDeviceToHost);
 	return pyarray;
 }
 
-std::vector<float2> HeightFieldExtractor::collect_extended_heightfield()
+float2* HeightFieldExtractor::collect_extended_heightfield()
 {
 	call_result_collection_kernel();
-	std::vector<float2> result_cpu( output_resolution.x * output_resolution.y * n_hf_entries);
-	cudaMemcpy(&result_cpu[0], result_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * n_hf_entries, cudaMemcpyDeviceToHost);
+	cudaMemcpy( result_cpu, result_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * n_hf_entries, cudaMemcpyDeviceToHost);
 	return result_cpu;
 }	
 

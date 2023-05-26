@@ -33,8 +33,7 @@ GPUMappedObject<DTYPE>::GPUMappedObject<DTYPE>(int3 dimensions)
 	, dimensions(dimensions)
 {
 	_gpu_ptr = allocate_buffer_on_gpu<DTYPE>(dimensions);
-	buffer.resize(dimensions.x * dimensions.y * dimensions.z);
-	_cpu_ptr = (DTYPE*)&buffer[0];
+	cudaMallocHost( &_cpu_ptr, sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z );
 }
 
 template<typename DTYPE>
@@ -45,10 +44,9 @@ GPUMappedObject<DTYPE>::GPUMappedObject<DTYPE>(int3 dimensions, DTYPE init_value
 {
 	_gpu_ptr = allocate_buffer_on_gpu<DTYPE>(dimensions);
 	call_mem_set_kernel(init_value);
-	buffer.resize(dimensions.x * dimensions.y * dimensions.z);
-	for (auto& value : buffer)
-		value = init_value;
-	_cpu_ptr = (DTYPE*)&buffer[0];
+	cudaMallocHost(&_cpu_ptr, sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z);
+	for ( size_t i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++ )
+		*(_cpu_ptr + i) = init_value;
 }
 
 template<typename DTYPE>
@@ -58,8 +56,7 @@ GPUMappedObject<DTYPE>::GPUMappedObject<DTYPE>(int3 dimensions, DTYPE* gpu_ptr)
 	, dimensions(dimensions)
 	, _gpu_ptr(gpu_ptr)
 {
-	buffer.resize(dimensions.x * dimensions.y * dimensions.z);
-	_cpu_ptr = (DTYPE*)&buffer[0];
+	cudaMallocHost(&_cpu_ptr, sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z);
 }
 
 template<typename DTYPE>
@@ -75,6 +72,8 @@ GPUMappedObject<DTYPE>::GPUMappedObject<DTYPE>(int3 dimensions, DTYPE* cpu_ptr, 
 template<typename DTYPE>
 GPUMappedObject<DTYPE>::~GPUMappedObject<DTYPE>()
 {
+	if (ownsCPUBuffer)
+		cudaFreeHost(_cpu_ptr);
 	if (ownsGPUBuffer)
 		cudaFree(_gpu_ptr);
 }
@@ -88,7 +87,8 @@ void GPUMappedObject<DTYPE>::push_on_gpu()
 template<typename DTYPE>
 void GPUMappedObject<DTYPE>::pull_from_gpu()
 {
-	cudaMemcpy((void*)_cpu_ptr, (void*) _gpu_ptr, sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z, cudaMemcpyDeviceToHost);
+	size_t size_in_bytes = sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z;
+	cudaMemcpy((void*)_cpu_ptr, (void*) _gpu_ptr, size_in_bytes, cudaMemcpyDeviceToHost);
 }
 
 template<typename DTYPE>
@@ -103,20 +103,20 @@ DTYPE* GPUMappedObject<DTYPE>::gpu_ptr()
 	return _gpu_ptr;
 }
 
-template<typename DTYPE>
+/* template<typename DTYPE>
 std::vector<DTYPE>& GPUMappedObject<DTYPE>::as_cpp()
 {
 	if (!ownsCPUBuffer)
 		throw std::runtime_error("cannot access std::vector<DTYPE> representation of buffer that is owned by other entity");
 	return buffer;
-}
+} */
 
 template<typename DTYPE>
 py::array_t<DTYPE> GPUMappedObject<DTYPE>::as_py()
 {
 	return py::array(
 		py::buffer_info(
-			_cpu_ptr,																					  /* Pointer to data (nullptr -> ask NumPy to allocate!) */
+			_cpu_ptr,																					  /* Pointer to data */
 			sizeof(DTYPE),																				  /* Size of one item */
 			py::format_descriptor<DTYPE>::format(),   				                                      /* Buffer format */
 			3,																							  /* How many dimensions? */
@@ -127,21 +127,10 @@ py::array_t<DTYPE> GPUMappedObject<DTYPE>::as_py()
 }
 
 template<typename DTYPE>
-void GPUMappedObject<DTYPE>::resize(int3 newDimensions)
-{
-	if ( newDimensions == dimensions )
-		return;
-	dimensions = newDimensions;
-	cudaFree( _gpu_ptr );
-	_gpu_ptr = allocate_buffer_on_gpu<DTYPE>( dimensions );
-	buffer.resize( dimensions.x * dimensions.y * dimensions.z );
-	_cpu_ptr = (DTYPE*)&buffer[0];
-}
-
-template<typename DTYPE>
 void GPUMappedObject<DTYPE>::set_cpu(DTYPE* cpu_ptr)
 {
-	buffer.resize(0);
+	if ( ownsCPUBuffer )
+		cudaFreeHost(_cpu_ptr);
 	_cpu_ptr = cpu_ptr;
 	ownsCPUBuffer = false;
 }

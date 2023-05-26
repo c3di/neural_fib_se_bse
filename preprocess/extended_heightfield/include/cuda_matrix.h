@@ -275,9 +275,9 @@ inline float4 getNormalised( const float4& quaternion )
 __host__ __device__
 inline float4 getMultipliedQuaternions( const float4& q1, const float4& q2 )
 {
-    const float x = q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
+    const float x =  q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
     const float y = -q1.x * q2.z + q1.y * q2.w + q1.z * q2.x + q1.w * q2.y;
-    const float z = q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
+    const float z =  q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
     const float w = -q1.x * q2.x - q1.y * q2.y - q1.z * q2.z + q1.w * q2.w;
     return make_float4( x, y, z, w );
 }
@@ -285,11 +285,19 @@ inline float4 getMultipliedQuaternions( const float4& q1, const float4& q2 )
 __host__ __device__
 inline float3 getPointTransformedByQuaternion( const float4& quaternion, const float3& point )
 {
+    const float3 u = make_float3(quaternion.x, quaternion.y, quaternion.z);
+    const float  s = quaternion.w;
+
+    const float a = 2.0f * getDotProduct( u, point );
+    const float b = s*s - getDotProduct(u, u);
+
+    return a * u + b * point + 2.0f * s * getCrossProduct( u, point);
+    /*
     const float4 point_in_4d = make_float4(point.x, point.y, point.z, 0.0f);
     const float4 tmp = getMultipliedQuaternions( quaternion, point_in_4d );
     const float4 quaternion_inv = getConjugateQuaternion(quaternion);
     const float4 rotated_point_in_4d = getMultipliedQuaternions(tmp, quaternion_inv);
-    return make_float3( rotated_point_in_4d.x, rotated_point_in_4d.y, rotated_point_in_4d.z );
+    return make_float3( rotated_point_in_4d.x, rotated_point_in_4d.y, rotated_point_in_4d.z ); */
 }
 
 __host__ __device__

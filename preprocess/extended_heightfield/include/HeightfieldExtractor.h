@@ -42,13 +42,13 @@ public:
 	void add_cuboids_py(py::array& cuboids);
 	void add_cuboids(std::vector<Cuboid>& cuboids);
 
-	std::tuple< std::vector<float2>, std::vector<float3>> extract_data_representation(float image_plane);
+	std::tuple< float2*, float3* > extract_data_representation(float image_plane);
 	std::tuple< py::array_t<float2>, py::array_t<float3>> extract_data_representation_py(float image_plane);
 	void intersect(float image_plane );
 
 protected:
 	py::array_t<float2> collect_extended_heightfield_py();
-	std::vector<float2> collect_extended_heightfield();
+	float2* collect_extended_heightfield();
 	void call_result_collection_kernel();
 
 protected:
@@ -60,6 +60,7 @@ protected:
 	float3* normal_map_gpu;
 
 	float2* result_gpu;
+	float2* result_cpu;
 
 	int2 output_resolution;
 	int n_hf_entries;

@@ -32,6 +32,8 @@ __global__ void mem_set_kernel(T* buffer, int3 buffer_size, T init_value)
 		return;
 	if (idy >= buffer_size.y)
 		return;
+	if (idz >= buffer_size.z)
+		return;
 
 	int pixel_index = idz * buffer_size.x * buffer_size.y + idy * buffer_size.x + idx;
 
@@ -51,6 +53,7 @@ template<typename T>
 __host__ T* allocate_buffer_on_gpu(int3 buffer_size, T init_value)
 {
 	T* buffer = allocate_buffer_on_gpu<T>(buffer_size);
+	call_mem_set_kernel( buffer, buffer_size, init_value );
 	return buffer;
 }
 

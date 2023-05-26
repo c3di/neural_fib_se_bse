@@ -42,16 +42,18 @@ if do_read:
     cylinders = read_primitives(file, 8, n_cylinders);
 
 n_spheres = 0
-cylinders = np.empty( (2, 9), dtype=np.float32 )
+cylinders = np.empty( (3, 9), dtype=np.float32 )
 
-pi_8 = 0.78539816339 / 2
-n_cylinders = 0
-cylinders[0] = [ 425.0, 425.0, 400.0, 0.0, 1.0, 0.0, pi_8, 50.0, 150.0 ]
-cylinders[1] = [ 425.0, 425.0, 400.0, 1.0, 0.0, 0.0, pi_8, 50.0, 150.0 ]
+pi_4 = 3.14159265359 / 16.0
+n_cylinders = 3
+cylinders[0] = [ 425.0, 225.0, 1000.0, 1.0, 0.0, 0.0, pi_4, 100.0, 250.0 ]
+cylinders[1] = [ 425.0, 425.0, 1000.0, 0.0, 1.0, 0.0, pi_4, 100.0, 250.0 ]
+cylinders[2] = [ 425.0, 625.0, 1000.0, 0.0, 0.0, 1.0, pi_4, 100.0, 250.0 ]
 
-cuboids = np.empty( (1, 10), dtype=np.float32 )
-n_cuboids = 1
-cuboids[0] = [ 425.0, 425.0, 400.0, 0.0, 1.0, 0.0, pi_8, 25.0, 50.0, 100.0 ]
+cuboids = np.empty( (2, 10), dtype=np.float32 )
+n_cuboids = 0
+cuboids[0] = [ 425.0, 425.0, 20.0, 1.0, 0.0, 1.0, pi_4, 80.0, 80.0, 80.0 ]
+cuboids[1] = [ 225.0, 425.0, 40.0, 1.0, 1.0, 0.0, pi_4, 80.0, 80.0, 80.0 ]
 
 print("performing preprocessing")
 start = time.perf_counter()

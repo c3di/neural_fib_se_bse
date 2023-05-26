@@ -8,13 +8,14 @@
 #include "HeightFieldExtractor.h"
 #include "sphere.h"
 #include "cylinder.h"
-// #include "cuda_matrix.h"
+#include "cuboid.h"
 
 int main( int argc, char* argv[] )
 { 
 	std::cout << "reading input" << std::endl;
-    std::vector<Sphere> spheres;
+    std::vector<Sphere>   spheres;
     std::vector<Cylinder> cylinders;
+    std::vector<Cuboid>   cuboids;
 
     bool do_read = false;
     if (do_read) 
@@ -35,7 +36,7 @@ int main( int argc, char* argv[] )
         {
             std::getline(ifs, line);
             std::istringstream line_stream(line);
-            line_stream >> id >> sphere.x >> sphere.y >> sphere.z >> sphere.r;
+            line_stream >> id >> sphere.position.x >> sphere.position.y >> sphere.position.z >> sphere.r;
             spheres.push_back(sphere);
         }
 
@@ -47,6 +48,7 @@ int main( int argc, char* argv[] )
             line_stream >> id >> cylinder.position.x >> cylinder.position.y >> cylinder.position.z >> cylinder.orientation.x >> cylinder.orientation.y >> cylinder.orientation.z >> cylinder.orientation.w >> cylinder.r >> cylinder.l;
             cylinders.push_back(cylinder);
         }
+
         ifs.close();
     }
     else 
@@ -60,7 +62,17 @@ int main( int argc, char* argv[] )
         cylinder.l = 150.0f;
         cylinders.push_back(cylinder);
         cylinder.orientation = make_float4(1.0, 0.0, 0.0, 0.78539816339f / 2.0f);
-        cylinders.push_back(cylinder);
+        cylinders.push_back(cylinder); 
+
+        Cuboid cuboid;
+        cuboid.position.x = 425.0f;
+        cuboid.position.y = 425.0f;
+        cuboid.position.z = 400.0f;
+        cuboid.orientation = make_float4(0.0, 1.0, 0.0, 0.78539816339f / 2.0f);
+        cuboid.size.x = 10.0f;
+        cuboid.size.y = 20.0f;
+        cuboid.size.z = 40.0f;
+        cuboids.push_back(cuboid);
     }
 
     std::cout << "performing preprocessing" << std::endl;
@@ -68,10 +80,20 @@ int main( int argc, char* argv[] )
 
     if ( spheres.size() > 0 )
         preprocessor->add_spheres(spheres);
-    if ( cylinders.size() > 0 )
+    if (cylinders.size() > 0)
         preprocessor->add_cylinders(cylinders);
+    if (cuboids.size() > 0)
+        preprocessor->add_cuboids(cuboids);
 
-    auto extended_heightfield = preprocessor->extract_data_representation( 0.0f );
+    auto data_representation = preprocessor->extract_data_representation( 0.0f );
+
+    auto extended_heightfield = std::get<0>(data_representation);
+
+    for (auto pair : extended_heightfield)
+    {
+        if ((pair.x < 65535.0f) && (pair.x > 0.0f))
+            std::cout << pair.x << "/" << pair.y << std::endl;
+    }
     std::cout << "done" << std::endl;
 
     delete preprocessor;

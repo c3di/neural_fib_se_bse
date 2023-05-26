@@ -24,10 +24,10 @@ public:
 
 	DTYPE* cpu_ptr();
 	DTYPE* gpu_ptr();
-	std::vector<DTYPE>& as_cpp();
+	// std::vector<DTYPE>& as_cpp();
 	py::array_t<DTYPE> as_py();
 
-	void resize(int3 newDimensions);
+	// void resize(int3 newDimensions);
 	void set_cpu(DTYPE* cpu_ptr);
 
 protected:
@@ -40,9 +40,6 @@ public:
 	bool ownsCPUBuffer;
 	bool ownsGPUBuffer;
 	int3 dimensions;
-
-private:
-	std::vector<DTYPE> buffer;
 };
 
 typedef GPUMappedObject<float>  GPUMappedFloatBuffer;

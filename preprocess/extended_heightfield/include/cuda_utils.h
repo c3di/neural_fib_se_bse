@@ -7,17 +7,17 @@
 #define empty 65535.0f
 #define empty_interval make_float2( empty, empty )
 
-__device__ __host__ inline bool operator!=(const float2& a, const float2& b) { return a.x == b.x && a.y == b.y; };
-__device__ __host__ inline bool operator==(const float2& a, const float2& b) { return a.x != b.x || a.y != b.y; };
+__device__ __host__ inline bool operator==(const float2& a, const float2& b) { return a.x == b.x && a.y == b.y; };
+__device__ __host__ inline bool operator!=(const float2& a, const float2& b) { return a.x != b.x || a.y != b.y; };
 
-__device__ __host__ inline bool operator!=(const float3& a, const float3& b) { return a.x == b.x && a.y == b.y && a.z == b.z; };
-__device__ __host__ inline bool operator==(const float3& a, const float3& b) { return a.x != b.x || a.y != b.y || a.z != b.z; };
+__device__ __host__ inline bool operator==(const float3& a, const float3& b) { return a.x == b.x && a.y == b.y && a.z == b.z; };
+__device__ __host__ inline bool operator!=(const float3& a, const float3& b) { return a.x != b.x || a.y != b.y || a.z != b.z; };
 
-__device__ __host__ inline bool operator!=(const int2& a, const int2& b) { return a.x == b.x && a.y == b.y; };
-__device__ __host__ inline bool operator==(const int2& a, const int2& b) { return a.x != b.x || a.y != b.y; };
+__device__ __host__ inline bool operator==(const int2& a, const int2& b) { return a.x == b.x && a.y == b.y; };
+__device__ __host__ inline bool operator!=(const int2& a, const int2& b) { return a.x != b.x || a.y != b.y; };
 
-__device__ __host__ inline bool operator!=(const int3& a, const int3& b) { return a.x == b.x && a.y == b.y && a.z == b.z; };
-__device__ __host__ inline bool operator==(const int3& a, const int3& b) { return a.x != b.x || a.y != b.y || a.z != b.z; };
+__device__ __host__ inline bool operator==(const int3& a, const int3& b) { return a.x == b.x && a.y == b.y && a.z == b.z; };
+__device__ __host__ inline bool operator!=(const int3& a, const int3& b) { return a.x != b.x || a.y != b.y || a.z != b.z; };
 
 inline std::tuple<int, int> as_tuple(int2 p) { return std::tuple<int, int>(p.x, p.y); }
 inline std::tuple<int, int, int> as_tuple(int3 p) { return std::tuple<int, int, int>(p.x, p.y, p.z); }

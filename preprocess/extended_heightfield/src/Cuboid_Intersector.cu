@@ -52,24 +52,48 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 	const float pixel_y = (float) idy;
 
 	// search beginning
+	if (debug && idx == debug_position.x && idy == debug_position.y)
+		printf("searching hit begin\n");
+
 	int hit_index = 0;
 	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
+	{
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+		{
+			float2 value = extended_heightfield[pixel_index * buffer_length + hit_index];
+			printf("  hit index %i %.2f %.2f\n", hit_index, value.x, value.y);
+		}
 		hit_index++;
+		if (hit_index > buffer_length)
+			return;
+	}
+
+	if (debug && idx == debug_position.x && idy == debug_position.y)
+		printf("starting cuboid insertion at hit index %i\n", hit_index);
 
 	// loop over all spheres
 	for (int primitive_id = 0; primitive_id < n_primitives; primitive_id++)
 	{
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("  cuboid ID %i\n", primitive_id);
+
 		const Cuboid& cuboid = primitives[primitive_id];
+
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("  aabb test size %.2f %.2f %.2f aabb %.2f %.2f %.2f\n", cuboid.size.x, cuboid.size.y, cuboid.size.z, cuboid.aabb.x, cuboid.aabb.y, cuboid.aabb.z );
 
 		if ((pixel_x < cuboid.position.x - cuboid.aabb.x) || (pixel_x > cuboid.position.x + cuboid.aabb.x)
 		 || (pixel_y < cuboid.position.y - cuboid.aabb.y) || (pixel_y > cuboid.position.y + cuboid.aabb.y)
 		 || (image_plane_z > cuboid.position.z + cuboid.aabb.z))
 			continue;
 
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("  aabb test passed\n");
+
 		float3 ray_origin    = make_float3(pixel_x- cuboid.position.x, pixel_y - cuboid.position.y, image_plane_z - cuboid.position.z);
 		float3 ray_direction = make_float3(0.0f,                        0.0f,                          1.0f);
 
-		if (debug && idx == 74 && idy == 45) 
+		if ( debug && idx == debug_position.x && idy == debug_position.y )
 		{
 			printf("pixel               %.2f %.2f\n", pixel_x, pixel_y);
 			printf("cylinder            %.2f %.2f %.2f dir %.2f %.2f %.2f %.2f\n", cuboid.position.x, cuboid.position.y, cuboid.position.z, cuboid.orientation.x, cuboid.orientation.y, cuboid.orientation.z, cuboid.orientation.w );
@@ -78,7 +102,7 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 
 		// Matrix3x3 object_to_world = getFromEulerAngles( cylinder.orientation );
 		const float4& object_to_world = cuboid.orientation;
-		if (debug && idx == debug_position.x && idy == debug_position.y)
+		if ( debug && idx == debug_position.x && idy == debug_position.y )
 		{
 			printf("object_to_world\n");
 			printf("  %.2f %.2f %.2f %.2f\n", object_to_world.x, object_to_world.y, object_to_world.z, object_to_world.w);
@@ -87,7 +111,7 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 
 		float4 world_to_object = getInverseQuaternion(object_to_world);
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
+		if ( debug && idx == debug_position.x && idy == debug_position.y )
 		{
 			printf("world_to_object\n");
 			printf("  %.2f %.2f %.2f %.2f\n", world_to_object.x, world_to_object.y, world_to_object.z, world_to_object.w);
@@ -100,23 +124,35 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 			printf("unnormalized ray origin %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
 		ray_direction = getNormalizedVec(ray_direction);
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("transformed ray origin %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
+		if ( debug && idx == debug_position.x && idy == debug_position.y )
+			printf("transformed  ray origin %.2f %.2f %.2f direction %.2f %.2f %.2f \n", ray_origin.x, ray_origin.y, ray_origin.z, ray_direction.x, ray_direction.y, ray_direction.z);
 
 		float3 normal = make_float3(1.0f, 0.0f, 0.0f);
 
-		float tmin = (-cuboid.position.x - ray_origin.x) / ray_direction.x;
-		float tmax = ( cuboid.position.x - ray_origin.x) / ray_direction.x;
+		float tmin = (-cuboid.size.x - ray_origin.x) / ray_direction.x;
+		float tmax = ( cuboid.size.x - ray_origin.x) / ray_direction.x;
 
-		if (tmin > tmax) swap(tmin, tmax);
+		if (tmin > tmax) 
+			swap(tmin, tmax);
 
-		float tymin = (-cuboid.position.y - ray_origin.y) / ray_direction.y;
-		float tymax = ( cuboid.position.y - ray_origin.y) / ray_direction.y;
+		if ( debug && idx == debug_position.x && idy == debug_position.y )
+			printf("intersect with x plane %.2f %.2f \n", tmin, tmax);
 
-		if (tymin > tymax) swap(tymin, tymax);
+		float tymin = (-cuboid.size.y - ray_origin.y) / ray_direction.y;
+		float tymax = ( cuboid.size.y - ray_origin.y) / ray_direction.y;
+
+		if (tymin > tymax) 
+			swap(tymin, tymax);
+
+		if ( debug && idx == debug_position.x && idy == debug_position.y )
+			printf("intersect with y plane %.2f %.2f \n", tymin, tymax);
 
 		if ((tmin > tymax) || (tymin > tmax))
+		{
+			if ( debug && idx == debug_position.x && idy == debug_position.y )
+				printf("no intersect because of tmin> tymax or tymin > tmax\n");
 			continue;
+		}
 
 		if (tymin > tmin)
 		{
@@ -127,11 +163,21 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 		if (tymax < tmax)
 			tmax = tymax;
 
-		float tzmin = (-cuboid.position.z - ray_origin.z) / ray_direction.z;
-		float tzmax = ( cuboid.position.z - ray_origin.z) / ray_direction.z;		
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("intersect considering y plane %.2f %.2f \n", tmin, tmax);
+
+		float tzmin = (-cuboid.size.z - ray_origin.z) / ray_direction.z;
+		float tzmax = ( cuboid.size.z - ray_origin.z) / ray_direction.z;
+
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("intersect with z plane %.2f - %.2f / %.2f = %.2f\n", cuboid.size.z, ray_origin.z, ray_direction.z, tzmin);
+
 
 		if (tzmin > tzmax) 
 			swap(tzmin, tzmax);
+
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("intersect with z plane %.2f %.2f \n", tzmin, tzmax);
 
 		if ((tmin > tzmax) || (tzmin > tmax))
 			continue;
@@ -144,6 +190,9 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 
 		if (tzmax < tmax)
 			tmax = tzmax;
+
+		if (debug && idx == debug_position.x && idy == debug_position.y)
+			printf("final intersect at %.2f %.2f \n", tmin, tmax);
 
 		bool cut_case = false;
 		// handle the case that the sphere is cut by the image place 
@@ -198,7 +247,7 @@ void Cuboid_Intersector::intersect( float image_plane )
 	int2 grid_size = output_resolution;
 	dim3 block_size(16, 16);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	intersect_cuboid_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer->gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, true, make_int2(425, 425) );
+	intersect_cuboid_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer->gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, make_int2(425, 425) );
 	throw_on_cuda_error();
 }
 
@@ -219,13 +268,13 @@ void Cuboid_Intersector::assign_aabb()
 		for (int i = 0; i < 8; i++)
 			corners[i] = getPointTransformedByQuaternion(cuboid.orientation, corners[i]);
 
-		float3 aabb = make_float3( 0.0f, 0.0f, 0.0f );
+		cuboid.aabb = make_float3( 0.0f, 0.0f, 0.0f );
 
 		for (int i = 0; i < 8; i++)
 		{
-			aabb.x = fmaxf(aabb.x, fabsf(corners[i].x));
-			aabb.y = fmaxf(aabb.y, fabsf(corners[i].y));
-			aabb.z = fmaxf(aabb.z, fabsf(corners[i].z));
+			cuboid.aabb.x = fmaxf(cuboid.aabb.x, fabsf(corners[i].x));
+			cuboid.aabb.y = fmaxf(cuboid.aabb.y, fabsf(corners[i].y));
+			cuboid.aabb.z = fmaxf(cuboid.aabb.z, fabsf(corners[i].z));
 		}
 	}
 }

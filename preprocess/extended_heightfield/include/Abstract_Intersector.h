@@ -15,7 +15,7 @@ public:
 	virtual std::tuple< py::array_t<float>, py::array_t<float> > intersect_py(float image_plane) = 0;
 	virtual void intersect(float image_plane) = 0;
 	virtual py::array_t<float3> get_normal_map_py() = 0;
-	virtual std::vector<float3>& get_normal_map() = 0;
+	virtual float3* get_normal_map() = 0;
 	virtual py::array_t<float> get_extended_height_field_py() = 0;
 };
 
@@ -34,7 +34,7 @@ public:
 	virtual void intersect( float image_plane ) = 0;
 
 	virtual py::array_t<float3> get_normal_map_py();
-	virtual std::vector<float3>& get_normal_map();
+	virtual float3* get_normal_map();
 	virtual py::array_t<float> get_extended_height_field_py();
 
 protected:

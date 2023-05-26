@@ -72,10 +72,10 @@ py::array_t<float3> Abstract_Intersector<Primitive>::get_normal_map_py()
 }
 
 template<class Primitive>
-std::vector<float3>& Abstract_Intersector<Primitive>::get_normal_map()
+float3* Abstract_Intersector<Primitive>::get_normal_map()
 {
 	normal_map->pull_from_gpu();
-	return normal_map->as_cpp();
+	return normal_map->cpu_ptr();
 }
 
 template<class Primitive>
