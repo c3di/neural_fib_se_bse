@@ -27,6 +27,12 @@ class CSG_Resolver;
 #define LIBRARY_API __declspec(dllimport)
 #endif
 
+/* Die HeightFieldExtractor is the top-level interface for the functionality of the module. The usage is to
+   create the HeightFieldExtractor, then add primitives, then call extract_data_representation. 
+   The data representation is as pair of extended height-field and normalmap.
+       1. The extended heightfield has dimensions res_x * res_y * n_hf_entries, where each hf_entry consists of a float2 of entry, and exit-point
+       2. The normal-map has dimensions res_x * res_y, where each entry is a float3 of a normalized world-space vector (x/y/z)
+ */
 class HeightFieldExtractor
 {
 public:
