@@ -76,7 +76,11 @@ int main( int argc, char* argv[] )
     }
 
     std::cout << "performing preprocessing" << std::endl;
-    auto preprocessor = new HeightFieldExtractor( std::tuple<int, int>(850, 850), 2, 64 );
+
+    int x_res = 850;
+    int y_res = 850;
+
+    auto preprocessor = new HeightFieldExtractor( std::tuple<int, int>( x_res, y_res ), 2, 64 );
 
     if ( spheres.size() > 0 )
         preprocessor->add_spheres(spheres);
@@ -89,10 +93,13 @@ int main( int argc, char* argv[] )
 
     auto extended_heightfield = std::get<0>(data_representation);
 
-    for (auto pair : extended_heightfield)
+    for (size_t i = 0; i < x_res * y_res; ++i)
     {
-        if ((pair.x < 65535.0f) && (pair.x > 0.0f))
-            std::cout << pair.x << "/" << pair.y << std::endl;
+        auto entry_exit = extended_heightfield[i];
+        {
+            if ((entry_exit.x < 65535.0f) && (entry_exit.x > 0.0f))
+                std::cout << entry_exit.x << "/" << entry_exit.y << std::endl;
+        }
     }
     std::cout << "done" << std::endl;
 
