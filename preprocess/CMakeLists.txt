@@ -31,6 +31,9 @@ generate_source_tree(LIBRARY_SOURCES "${DIRS}" "${FILE_TYPES}")
 
 set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heightfield/include")
 
+find_package(CUDA  REQUIRED)
+include_directories("${CUDA_INCLUDE_DIRS}")
+
 find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 
 message(STATUS "Python_FOUND:${Python_FOUND}")
@@ -67,14 +70,25 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     ENDIF()
 ENDIF()
 
-add_custom_command(
-	TARGET extended_heightfield
-	POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-	"${CMAKE_BINARY_DIR}/bin/$<CONFIG>/extended_heightfield.dll"
-	"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/$<CONFIG>/extended_heightfield.pyd"
-)
-		
+# Copy compiled lib as python module
+if(MSVC)
+  add_custom_command(
+    TARGET extended_heightfield
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+    "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/extended_heightfield.dll"
+    "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/$<CONFIG>/extended_heightfield.pyd"
+  )
+else()
+  add_custom_command(
+    TARGET extended_heightfield
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+    "${CMAKE_BINARY_DIR}/bin/libextended_heightfield.so"
+    "${CMAKE_CURRENT_SOURCE_DIR}/extended_heightfield.so"
+  )
+endif()
+
 # Copy necessary dlls to target directory
 if(MSVC)
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Debug/")
@@ -110,7 +124,9 @@ set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE 
 
 INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pyproj" PLATFORM "Any CPU")
 
-add_dependencies(python_binding extended_heightfield)
+if(MSVC)
+  add_dependencies(python_binding extended_heightfield)
+endif()
 
 add_executable(cli "cli/main.cpp" )
 add_dependencies(cli extended_heightfield)

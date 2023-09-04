@@ -1,5 +1,3 @@
-#pragma once
-
 #include "python_utils.h"
 
 py::array_t<float> create_py_array(int shape0, int shape1, int shape2)

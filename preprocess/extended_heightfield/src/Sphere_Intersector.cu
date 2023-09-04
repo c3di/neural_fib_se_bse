@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Sphere_Intersector.h"
 
 #include "cuda_utils.h"

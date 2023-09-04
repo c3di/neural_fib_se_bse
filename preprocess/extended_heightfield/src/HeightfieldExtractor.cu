@@ -1,5 +1,3 @@
-#pragma once
-
 #include "HeightFieldExtractor.h"
 #include "Sphere_Intersector.h"
 #include "Cylinder_Intersector.h"
