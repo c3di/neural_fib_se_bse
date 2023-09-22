@@ -41,20 +41,31 @@ if do_read:
     spheres   = read_primitives(file, 4, n_spheres);
     cylinders = read_primitives(file, 8, n_cylinders);
 
+n_cylinders = 4
+cylinders = np.empty( (n_cylinders, 9), dtype=np.float32 )
+rotation = 3.14159265359 / 2.0
+
+from scipy.spatial.transform import Rotation
+
+rotationY = Rotation.from_rotvec([45.0, 0.0,   0.0], degrees=True)
+rotationX = Rotation.from_rotvec([ 0.0, 45.0,  0.0], degrees=True)
+rotationZ = Rotation.from_rotvec([ 0.0,  0.0, 45.0], degrees=True)
+qx = rotationX.as_quat()
+qy = rotationY.as_quat()
+qz = rotationZ.as_quat()
+
+cylinders[0] = [ 425.0, 225.0,  500.0, qx[0], qx[1], qx[2], qx[3], 100.0, 200.0 ]
+cylinders[1] = [ 425.0, 425.0, 1000.0, qy[0], qy[1], qy[2], qy[3], 100.0, 200.0 ]
+cylinders[2] = [ 425.0, 625.0, 1250.0, qz[0], qz[1], qz[2], qz[3], 100.0, 200.0 ]
+cylinders[3] = [ 425.0, 625.0, 1500.0, qz[0], qz[1], qz[2], qz[3], 100.0, 200.0 ]
+
+n_cuboids = 3
+cuboids = np.empty( (n_cuboids, 10), dtype=np.float32 )
+cuboids[0] = [ 180.0, 180.0, 80.0, qx[0], qx[1], qx[2], qx[3], 20.0, 40.0, 80.0 ]
+cuboids[1] = [ 670.0, 670.0, 80.0, qy[0], qy[1], qy[2], qy[3], 20.0, 40.0, 80.0 ]
+cuboids[2] = [ 180.0, 670.0, 80.0, qz[0], qz[1], qz[2], qz[3], 20.0, 40.0, 80.0 ]
+
 n_spheres = 0
-cylinders = np.empty( (4, 9), dtype=np.float32 )
-
-pi_4 = 3.14159265359 / 16.0
-n_cylinders = 3
-cylinders[0] = [ 425.0, 225.0,  500.0, 1.0, 0.0, 0.0,  pi_4, 100.0, 200.0 ]
-cylinders[1] = [ 425.0, 425.0, 1000.0, 0.0, 1.0, 0.0,  pi_4, 100.0, 200.0 ]
-cylinders[2] = [ 425.0, 625.0, 1500.0, 0.0, 0.0, 1.0,  pi_4, 100.0, 200.0 ]
-cylinders[3] = [ 425.0, 625.0, 3000.0, 0.0, 0.0, 1.0,  pi_4, 100.0, 200.0 ]
-
-cuboids = np.empty( (2, 10), dtype=np.float32 )
-n_cuboids = 0
-cuboids[0] = [ 625.0, 425.0, 20.0, 1.0, 0.0, 1.0, pi_4, 80.0, 80.0, 80.0 ]
-cuboids[1] = [ 225.0, 425.0, 40.0, 1.0, 1.0, 0.0, pi_4, 80.0, 80.0, 80.0 ]
 
 print("performing preprocessing")
 start = time.perf_counter()
