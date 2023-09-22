@@ -42,17 +42,18 @@ if do_read:
     cylinders = read_primitives(file, 8, n_cylinders);
 
 n_spheres = 0
-cylinders = np.empty( (3, 9), dtype=np.float32 )
+cylinders = np.empty( (4, 9), dtype=np.float32 )
 
 pi_4 = 3.14159265359 / 16.0
 n_cylinders = 3
-cylinders[0] = [ 425.0, 225.0, 1000.0, 1.0, 0.0, 0.0, pi_4, 100.0, 250.0 ]
-cylinders[1] = [ 425.0, 425.0, 1000.0, 0.0, 1.0, 0.0, pi_4, 100.0, 250.0 ]
-cylinders[2] = [ 425.0, 625.0, 1000.0, 0.0, 0.0, 1.0, pi_4, 100.0, 250.0 ]
+cylinders[0] = [ 425.0, 225.0,  500.0, 1.0, 0.0, 0.0,  pi_4, 100.0, 200.0 ]
+cylinders[1] = [ 425.0, 425.0, 1000.0, 0.0, 1.0, 0.0,  pi_4, 100.0, 200.0 ]
+cylinders[2] = [ 425.0, 625.0, 1500.0, 0.0, 0.0, 1.0,  pi_4, 100.0, 200.0 ]
+cylinders[3] = [ 425.0, 625.0, 3000.0, 0.0, 0.0, 1.0,  pi_4, 100.0, 200.0 ]
 
 cuboids = np.empty( (2, 10), dtype=np.float32 )
 n_cuboids = 0
-cuboids[0] = [ 425.0, 425.0, 20.0, 1.0, 0.0, 1.0, pi_4, 80.0, 80.0, 80.0 ]
+cuboids[0] = [ 625.0, 425.0, 20.0, 1.0, 0.0, 1.0, pi_4, 80.0, 80.0, 80.0 ]
 cuboids[1] = [ 225.0, 425.0, 40.0, 1.0, 1.0, 0.0, pi_4, 80.0, 80.0, 80.0 ]
 
 print("performing preprocessing")
@@ -68,10 +69,14 @@ extended_heightfield, normal_map = preprocessor.extract_data_representation( 0.0
 stop = time.perf_counter()
 print(f"done preprocessing in {stop-start:0.3f} sec")
 
+print("extended_heightfield.shape", extended_heightfield.shape, extended_heightfield.dtype)
+
 for z in range(extended_heightfield.shape[2]):
-    entry_0 = rf.structured_to_unstructured(extended_heightfield[:,:,z]);
-    entry_0 = entry_0[:,:,0].astype(np.uint16)
-    img = Image.fromarray(entry_0, "I;16")
+    # entry_0 = rf.structured_to_unstructured(extended_heightfield[:,:,z]);
+    entry = extended_heightfield[:,:,z]
+    print("entry_",z,".shape", entry.shape, entry.dtype)
+    entry = entry.astype(np.uint16)
+    img = Image.fromarray(entry, "I;16")
     img.save("output/integrated_"+str(z)+".tif");
 
 print("normal_map", normal_map.shape, normal_map .dtype)

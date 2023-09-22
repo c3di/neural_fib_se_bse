@@ -34,7 +34,7 @@ set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heigh
 find_package(CUDA  REQUIRED)
 include_directories("${CUDA_INCLUDE_DIRS}")
 
-find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 
 message(STATUS "Python_FOUND:${Python_FOUND}")
 message(STATUS "Python_VERSION:${Python_VERSION}")
@@ -92,30 +92,14 @@ endif()
 # Copy necessary dlls to target directory
 if(MSVC)
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Debug/")
-	add_custom_command(
-		TARGET extended_heightfield
-		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
-		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Debug/"
-	)
-	
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Release/")
-	add_custom_command(
-		TARGET extended_heightfield
-		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
-		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Release/"
-	)
-	
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/RelWithDebInfo/")
 	add_custom_command(
 		TARGET extended_heightfield
 		POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
 		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
-		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/RelWithDebInfo/"
+		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/$<CONFIG>/"
 	)
 endif(MSVC)
 

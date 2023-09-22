@@ -5,13 +5,13 @@
     <ProjectGuid>c579c70a-d6c7-44a0-9d4d-f3d3f2f9eadd</ProjectGuid>
     <ProjectHome>.</ProjectHome>
     <StartupFile>python_binding.py</StartupFile>
-    <WorkingDirectory>W:\dahmen\post_fib_se_bse_surrogate\preprocess</WorkingDirectory>
+    <WorkingDirectory>F:\development\post_fib_se_bse_surrogate\preprocess</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>python_binding</Name>
     <RootNamespace>python_binding</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>True</EnableNativeCodeDebugging>
-    <InterpreterId>Global|PythonCore|3.9</InterpreterId>
+    <InterpreterId>Global|PythonCore|3.11</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <TestFramework>Pytest</TestFramework>
     <CommandLineArguments>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
-    <SearchPath>Debug</SearchPath>
+    <SearchPath>Release</SearchPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'RelWithDebInfo' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,7 +36,7 @@
     <Compile Include="python_binding.py" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|PythonCore|3.9" />
+    <InterpreterReference Include="Global|PythonCore|3.11" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\build\extended_heightfield.vcxproj">

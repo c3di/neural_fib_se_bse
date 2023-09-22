@@ -220,13 +220,20 @@ void Cylinder_Intersector::assign_aabb()
 {
 	for (Cylinder& cylinder : primitives_cpu)
 	{
-		const float3 a = getPointTransformedByQuaternion( cylinder.orientation, make_float3(0.0, 0.0, 1.0) );
-		const float a_dot_a = getDotProduct( a, a);
+		const float3 d = getPointTransformedByQuaternion( cylinder.orientation, make_float3(0.0, 0.0, 1.0) );
+		const float3 a = -cylinder.l * d;
+		const float3 b = cylinder.l * d;
+		const float d_dot_d = getDotProduct( d, d);
 
 		float3 e;
-		e.x = cylinder.r * sqrtf(1.0f - (a.x * a.x) / a_dot_a);
-		e.y = cylinder.r * sqrtf(1.0f - (a.y * a.y) / a_dot_a);
-		e.z = cylinder.r * sqrtf(1.0f - (a.z * a.z) / a_dot_a);
-		cylinder.aabb = getComponentWiseAbs(e);
+		e.x = cylinder.r * sqrtf(1.0f - (d.x * d.x) / d_dot_d);
+		e.y = cylinder.r * sqrtf(1.0f - (d.y * d.y) / d_dot_d);
+		e.z = cylinder.r * sqrtf(1.0f - (d.z * d.z) / d_dot_d);
+
+		float3 lower = getComponentWiseMin(a - e, b - e);
+		float3 upper = getComponentWiseMin(a + e, b + e);
+		lower = getComponentWiseAbs(lower);
+		upper = getComponentWiseAbs(upper);
+		cylinder.aabb = getComponentWiseMax( lower, upper );
 	}
 }

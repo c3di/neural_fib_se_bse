@@ -100,10 +100,10 @@ std::tuple<float2*, float3*> HeightFieldExtractor::extract_data_representation(f
 	return std::tuple<float2*, float3*>(collect_extended_heightfield(), intersectors[0]->get_normal_map());
 }
 
-std::tuple< py::array_t<float2>, py::array_t<float3>>  HeightFieldExtractor::extract_data_representation_py(float image_plane)
+std::tuple< py::array_t<float>, py::array_t<float3>>  HeightFieldExtractor::extract_data_representation_py(float image_plane)
 {
 	intersect( image_plane );
-	return std::tuple< py::array_t<float2>, py::array_t<float3>>( collect_extended_heightfield_py(), intersectors[0]->get_normal_map_py() );
+	return std::tuple< py::array_t<float>, py::array_t<float3>>( collect_extended_heightfield_py(), intersectors[0]->get_normal_map_py() );
 }
 
 void HeightFieldExtractor::intersect(float image_plane)
@@ -116,12 +116,13 @@ void HeightFieldExtractor::intersect(float image_plane)
 	cudaDeviceSynchronize();
 }
 
-py::array_t<float2> HeightFieldExtractor::collect_extended_heightfield_py()
+py::array_t<float> HeightFieldExtractor::collect_extended_heightfield_py()
 {
 	call_result_collection_kernel();
 	cudaDeviceSynchronize();
 	auto pyarray = create_py_array(output_resolution.x, output_resolution.y, n_hf_entries * 2);
-	cudaMemcpy(pyarray.request().ptr, result_gpu, sizeof(float2) * output_resolution.x * output_resolution.y * n_hf_entries, cudaMemcpyDeviceToHost);
+	size_t data_size = sizeof(float2) * output_resolution.x * output_resolution.y * n_hf_entries;
+	cudaMemcpy(pyarray.request().ptr, result_gpu, data_size, cudaMemcpyDeviceToHost);
 	return pyarray;
 }
 
