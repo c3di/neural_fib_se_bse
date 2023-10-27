@@ -1,0 +1,71 @@
+# Volcano example for pytorch
+# Based on
+# https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html
+# https://github.com/yangkky/distributed_tutorial/blob/master/src/mnist-distributed.py
+apiVersion: batch.volcano.sh/v1alpha1
+kind: Job
+metadata:
+  name: pytorch-multi-worker
+  namespace: tida01
+spec:
+  minAvailable: 1
+  schedulerName: volcano
+  queue: asr-queue-dahmen
+  plugins:
+    env: []
+    svc: []
+  policies:
+    - event: PodEvicted
+      action: RestartJob
+  tasks:
+    - replicas: 13
+      name: worker
+      policies:
+        - event: TaskCompleted
+          action: CompleteJob
+      template:
+        spec:
+          imagePullSecrets:
+            - name: default-secret
+          containers:
+            - name: pytorch
+              image: ghcr.io/dmrub/fastai:11.8.0-runtime-ubuntu22.04
+              command:
+                - sh
+                - -c
+                - |
+                  set -xe;
+                  pip install tifffile
+                  export MASTER_ADDR=$(head -n1 /etc/volcano/worker.host);
+                  export MASTER_PORT=8888;
+                  echo "Copy Data ..."
+                  cp -R ./data/* /training-data/
+                  echo "Starting Training..."
+                  python3 fib_surrogate_distributed.py -nr ${VK_TASK_INDEX};
+                  ERR=$?;
+                  echo "Error: $ERR";
+                  if [ $ERR -eq 134 ]; then
+                    ls -lah;
+                    echo "Process PID: $$";
+                    while true; do sleep 10; done;
+                  fi
+                  exit $ERR;
+              ports:
+                - containerPort: 8888
+                  name: pytorch-port
+              resources:
+                limits:
+                  nvidia.com/gpu: "1"
+              workingDir: /basedir/
+              volumeMounts:
+                - mountPath: /basedir
+                  name: data-volume
+                - mountPath: /training-data
+                  name: training-data-cache
+          volumes:
+            - name: data-volume
+              persistentVolumeClaim:
+                claimName: tida01-pvc
+            - name: training-data-cache
+              emptyDir: {}
+          restartPolicy: OnFailure

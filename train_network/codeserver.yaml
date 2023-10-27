@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: tida01
+  name: aetna-codeserver
+spec:
+  selector:
+    matchLabels:
+      run: find-my-aetna-codeserver
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: find-my-aetna-codeserver
+    spec:
+      containers:
+      - name: aetna-codeserver
+        image: 	ghcr.io/rmrschub/aetna-codeserver:latest
+        imagePullPolicy: Always
+        env:
+        - name: DEFAULT_WORKSPACE
+          value: /home/jovyan
+        ports:
+        - containerPort: 8888
+          name: http-port
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /home/jovyan
+          name: data-volume
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: tida01-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: tida01
+  name: aetna-codeserver
+spec:
+  selector:
+    run: find-my-aetna-codeserver
+  ports:
+    - protocol: TCP
+      port: 80    # use only 80, 8080 for HTTP or 443, 8443, 6443 for HTTPS
+      targetPort: http-port
+      name: http  # The "name" field is optional, 
+                  # but must contain http or https for the Services widget 
+                  # in Aetna Dashboard if you want to use a non-standard 
+                  # port number in the "port" field.

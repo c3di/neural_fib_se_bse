@@ -1,0 +1,3 @@
+[submodule "Boolean-Model-Generator"]
+	path = Boolean-Model-Generator
+	url = git@github.com:NiklasRottmayer/Boolean-Model-Generator.git
