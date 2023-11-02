@@ -355,19 +355,19 @@ def train_neural_network( input_path = Path('/training-data'),
         weight_name = datalayout + "_" + backbone_name + "_" + lossname + "_" + str(epochs)
         learner.load(weight_name)
 
-        if do_evaluate:
-            create_top_loss_image( learner, weight_name + "_top4.png")
+    if do_evaluate:
+        create_top_loss_image( learner, weight_name + "_top4.png")
 
-        if do_test:
-            test_input_path = Path('./test_data')
-            test_files = get_items( test_input_path )
-            test_dataloader = learner.dls.test_dl( test_files )
+    if do_test:
+        test_input_path = Path('./test_data')
+        test_files = get_items( test_input_path )
+        test_dataloader = learner.dls.test_dl( test_files )
 
-            cb = PredictionsFromTupleCallback()
-            ctx_mgrs = learner.validation_context(cbs=[cb])
-            with ContextManagers(ctx_mgrs):
-                learner._do_epoch_validate(dl=test_dataloader)
-            all_preds = cb.preds
+        cb = PredictionsFromTupleCallback()
+        ctx_mgrs = learner.validation_context(cbs=[cb])
+        with ContextManagers(ctx_mgrs):
+            learner._do_epoch_validate(dl=test_dataloader)
+        all_preds = cb.preds
             
 
 parser = argparse.ArgumentParser()
