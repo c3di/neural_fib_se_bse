@@ -226,7 +226,7 @@ class PredictionsFromTupleCallback(Callback):
         self.preds.append((se,bse))
         self.targets.append(self.yb)       
         
-def create_top_loss_image( learner, output_filename ):       
+def create_top_loss_image( learner, output_filename ):    
     interpretation = Interpretation.from_learner( learner )    
     values,indices = interpretation.top_losses(k=4)
 
@@ -341,6 +341,7 @@ def train_neural_network( input_path = Path('/training-data'),
     learner = Learner( data_loader, model, loss_func=loss, metrics=[total_mse, total_l1] )
 
     if do_train:
+        print("training neural network for", n_epochs, "epochs total")
         learner.fit( 1, lr=learning_rate )
         epochs = 1
 
@@ -353,9 +354,11 @@ def train_neural_network( input_path = Path('/training-data'),
     else:
         epochs = 100
         weight_name = datalayout + "_" + backbone_name + "_" + lossname + "_" + str(epochs)
+        print("skipping training of neural network, loading", weight_name )
         learner.load(weight_name)
 
     if do_evaluate:
+        print("creating top loss image", weight_name)   
         create_top_loss_image( learner, weight_name + "_top4.png")
 
     if do_test:
