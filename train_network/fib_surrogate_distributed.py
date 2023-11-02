@@ -283,7 +283,7 @@ def create_top_loss_image( learner, output_filename ):
 class PILImageBW16( PILImageBW ):
     @classmethod
     def create( cls, fn, mode=None):
-        data = tiff.imread(fn)
+        data = tifffile.imread(fn)
         data = data.astype( numpy.float32 )
         image = Image.fromarray( data )
         return cls( image )

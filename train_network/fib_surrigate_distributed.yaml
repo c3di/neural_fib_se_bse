@@ -41,7 +41,7 @@ spec:
                   echo "Copy Data ..."
                   cp -R ./data/* /training-data/
                   echo "Starting Training..."
-                  python3 fib_surrogate_distributed.py -nr ${VK_TASK_INDEX};
+                  python3 post_fib_se_bse_surrogate/train_network/fib_surrogate_distributed.py -nr ${VK_TASK_INDEX};
                   ERR=$?;
                   echo "Error: $ERR";
                   if [ $ERR -eq 134 ]; then
