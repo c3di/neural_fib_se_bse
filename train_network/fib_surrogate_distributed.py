@@ -289,7 +289,7 @@ class PILImageBW16( PILImageBW ):
         return cls( image )
  
 def train_neural_network( input_path = Path('/training-data'), 
-                          do_train = True, 
+                          do_train = False, 
                           do_evaluate = True, 
                           do_test = False, 
                           n_epochs = [19,30,50],
