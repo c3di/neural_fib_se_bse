@@ -18,54 +18,65 @@ print("import successful")
 
 # spheres = np.array( [ [8.0,4.0,4.0,2.0], [8.0,4.0,1.0,2.0], [8.0,4.0,21.0,2.0], [8.0,4.0,16.0,2.0], [8.0,4.0,0.0,2.0], [8.0,4.0,6.0,2.0], [8.0,4.0,18.5,2.0], [8.0,4.0,256,2.0], [8.0,4.0,512,2.0] ] )
 
-do_read = False
+do_read = True
 
 if do_read:
-    filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"
+    # filename =  "data/Sphere_Vv03_r10-15_Num1_ITWMconfig.txt"  
+    filename = "data/Cube_Vv0p3_l10-15_Uniform_PlusSampling_Num3_ITWM.txt"
     # filename = "data/Cylinder_Vv03_r5-10_h100-150_homogen_ITWMconfig.txt"
     file = open(filename)
+
+    def next_content_line( file ):
+        found_content = False
+        while not found_content:
+            line = next(file)
+            if not line.startswith("#"):
+                found_content = True
+        return line
 
     def read_primitives( file, primitive_size, n_items ):
         primitives = np.empty( (n_items, primitive_size), dtype=np.float32 )
         for count in range( n_items ):
-            line = next(file)
+            line = next_content_line(file)
             items = line.split("\t")
             i = int(items[0])
             for j in range(1, primitive_size+1):
                 primitives[int(i)-1,j-1] = float( items[j] )
         return primitives
 
-    n_spheres   = int( next(file) )
-    n_cylinders = int( next(file) )
+    n_spheres   = int( next_content_line(file) )
+    n_cylinders = int( next_content_line(file) )
+    n_cuboids   = int( next_content_line(file) )
 
     spheres   = read_primitives(file, 4, n_spheres);
     cylinders = read_primitives(file, 8, n_cylinders);
+    cuboids   = read_primitives(file, 8, n_cuboids);
+else:
+    n_cylinders = 4
+    cylinders = np.empty( (n_cylinders, 9), dtype=np.float32 )
+    rotation = 3.14159265359 / 2.0
 
-n_cylinders = 4
-cylinders = np.empty( (n_cylinders, 9), dtype=np.float32 )
-rotation = 3.14159265359 / 2.0
+    from scipy.spatial.transform import Rotation
 
-from scipy.spatial.transform import Rotation
+    rotationY = Rotation.from_rotvec([45.0, 0.0,   0.0], degrees=True)
+    rotationX = Rotation.from_rotvec([ 0.0, 45.0,  0.0], degrees=True)
+    rotationZ = Rotation.from_rotvec([ 0.0,  0.0, 45.0], degrees=True)
+    qx = rotationX.as_quat()
+    qy = rotationY.as_quat()
+    qz = rotationZ.as_quat()
 
-rotationY = Rotation.from_rotvec([45.0, 0.0,   0.0], degrees=True)
-rotationX = Rotation.from_rotvec([ 0.0, 45.0,  0.0], degrees=True)
-rotationZ = Rotation.from_rotvec([ 0.0,  0.0, 45.0], degrees=True)
-qx = rotationX.as_quat()
-qy = rotationY.as_quat()
-qz = rotationZ.as_quat()
+    cylinders[0] = [ 425.0, 225.0,  500.0, qx[0], qx[1], qx[2], qx[3], 100.0, 200.0 ]
+    cylinders[1] = [ 425.0, 425.0, 1000.0, qy[0], qy[1], qy[2], qy[3], 100.0, 200.0 ]
+    cylinders[2] = [ 425.0, 625.0, 1250.0, qz[0], qz[1], qz[2], qz[3], 100.0, 200.0 ]
+    cylinders[3] = [ 425.0, 625.0, 1500.0, qz[0], qz[1], qz[2], qz[3], 100.0, 200.0 ]
 
-cylinders[0] = [ 425.0, 225.0,  500.0, qx[0], qx[1], qx[2], qx[3], 100.0, 200.0 ]
-cylinders[1] = [ 425.0, 425.0, 1000.0, qy[0], qy[1], qy[2], qy[3], 100.0, 200.0 ]
-cylinders[2] = [ 425.0, 625.0, 1250.0, qz[0], qz[1], qz[2], qz[3], 100.0, 200.0 ]
-cylinders[3] = [ 425.0, 625.0, 1500.0, qz[0], qz[1], qz[2], qz[3], 100.0, 200.0 ]
+    n_cuboids = 3
+    cuboids = np.empty( (n_cuboids, 10), dtype=np.float32 )
+    cuboids[0] = [ 180.0, 180.0, 80.0, qx[0], qx[1], qx[2], qx[3], 20.0, 40.0, 80.0 ]
+    cuboids[1] = [ 670.0, 670.0, 80.0, qy[0], qy[1], qy[2], qy[3], 20.0, 40.0, 80.0 ]
+    cuboids[2] = [ 180.0, 670.0, 80.0, qz[0], qz[1], qz[2], qz[3], 20.0, 40.0, 80.0 ]
 
-n_cuboids = 3
-cuboids = np.empty( (n_cuboids, 10), dtype=np.float32 )
-cuboids[0] = [ 180.0, 180.0, 80.0, qx[0], qx[1], qx[2], qx[3], 20.0, 40.0, 80.0 ]
-cuboids[1] = [ 670.0, 670.0, 80.0, qy[0], qy[1], qy[2], qy[3], 20.0, 40.0, 80.0 ]
-cuboids[2] = [ 180.0, 670.0, 80.0, qz[0], qz[1], qz[2], qz[3], 20.0, 40.0, 80.0 ]
-
-n_spheres = 0
+    n_spheres = 0
 
 print("performing preprocessing")
 start = time.perf_counter()

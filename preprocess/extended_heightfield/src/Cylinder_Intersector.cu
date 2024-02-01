@@ -156,7 +156,12 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			t1 = side_t1;
 
 		bool cut_case = false;
-		// handle the case that the sphere is cut by the image place 
+
+		// handle the case that both intersection points are before the image plane
+		if (t0 < 0.0f && t1 < 0.0f)
+			continue;
+
+		// handle the case that the cylinder is cut by the image plane 
 		if (t0 < 0.0f)
 		{
 			t0 = 0.0f;
