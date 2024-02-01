@@ -6,6 +6,7 @@ import argparse
 import tifffile
 import numpy as np
 import numpy.lib.recfunctions as rf
+import scipy.spatial.transform.Rotation
 
 import preprocess.extended_heightfield
 
@@ -47,16 +48,21 @@ def sphere_data_to_numpy( spheres ):
         spheres_np[i,3] = r
     return spheres_np
 
-def cylinder_data_to_numpy( spheres ):
-    spheres_np        = np.zeros( (len(spheres), 4), dtype=np.float32 )
-    for i,sphere in enumerate(spheres):
-        _,x,y,z,r = sphere
-        spheres_np[i,0] = x + 0.5
-        spheres_np[i,1] = y + 0.5
-        spheres_np[i,2] = z + 0.5
-        spheres_np[i,3] = r
-    return spheres_np
-
+def cylinder_data_to_numpy( cylinders ):
+    cylinders_np        = np.zeros( (len(cylinders), 9), dtype=np.float32 )
+    for i,cylinder in enumerate( cylinders ):
+        _,x,y,z,euler1,euler2,euler3,r,l = cylinder
+        cylinders_np[i,0] = x + 0.5
+        cylinders_np[i,1] = y + 0.5
+        cylinders_np[i,2] = z + 0.5
+        rotation_matrix = Rotation.from_euler("ZXZ", [euler1,euler2,euler3])
+        cylinders_np[i,3] = angle0
+        cylinders_np[i,4] = angle1
+        cylinders_np[i,5] = angle2
+        cylinders_np[i,6] = angle3
+        cylinders_np[i,7] = r
+        cylinders_np[i,8] = l
+    return cylinders_np
 
 output_size = 512
 
@@ -80,18 +86,18 @@ for filename in file_names:
 
     preprocessor = preprocess.extended_heightfield.HeightFieldExtractor( (output_size, output_size), 2, 256 )
 
-    if num_spheres>0:
+    if num_spheres > 0:
         spheres_np = sphere_data_to_numpy( spheres )
         preprocessor.add_spheres( spheres_np )
     
-    if num_cylinders>0:
+    if num_cylinders > 0:
         cylinders_np = cylinder_data_to_numpy( cylinders )
         preprocessor.add_cylinders( cylinders_np )
 
     extended_heightfield, normal_map = preprocessor.extract_data_representation( 0.0 )
     extended_heightfield = extended_heightfield.reshape( ( output_size, output_size, 4 ) )
 
-    extended_heightfield[ extended_heightfield>256.0 ] = 256.0
+    extended_heightfield[ extended_heightfield > 256.0 ] = 256.0
     normal_map = normal_map.squeeze( 2 )
     normal_map = rf.structured_to_unstructured( normal_map );
 
