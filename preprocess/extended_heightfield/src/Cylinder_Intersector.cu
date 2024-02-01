@@ -161,7 +161,7 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 		if (t0 < 0.0f && t1 < 0.0f)
 			continue;
 
-		// handle the case that the cylinder is cut by the image plane 
+		// handle the case that the sphere is cut by the image place 
 		if (t0 < 0.0f)
 		{
 			t0 = 0.0f;
