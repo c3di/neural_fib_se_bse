@@ -11,7 +11,7 @@ from scipy.spatial.transform import Rotation
 import preprocess.extended_heightfield
 
 data_representation = []
-config_path = pathlib.Path('config_data/')
+config_path = pathlib.Path('test_data/')
 
 file_names = os.listdir(config_path)
 
@@ -130,5 +130,5 @@ for filename in file_names:
 
     normal_map = ( normal_map + 1.0 ) * 127.5
 
+    normal_map = normal_map.transpose((2,1,0))
     tifffile.imwrite( filename + "_normal_map.tif", normal_map.astype( np.uint8 ), photometric='rgb')
-
