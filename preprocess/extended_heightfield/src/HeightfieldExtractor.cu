@@ -111,6 +111,9 @@ void HeightFieldExtractor::intersect(float image_plane)
 	int3 extended_heightfield_size = make_int3(output_resolution.x, output_resolution.y, max_buffer_length);
 	call_mem_set_kernel<float2>(extended_heightfield_gpu, extended_heightfield_size, empty_interval);
 
+	int3 normalmap_size = make_int3(output_resolution.x, output_resolution.y, 1);
+	call_mem_set_kernel<float3>(normal_map_gpu, normalmap_size, make_float3(0.5, 0.5, 0.5) );
+	
 	for (auto intersectors : intersectors) {
 		intersectors->intersect(image_plane);
 		cudaDeviceSynchronize();
