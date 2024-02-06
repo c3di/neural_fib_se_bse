@@ -11,7 +11,8 @@ from scipy.spatial.transform import Rotation
 import preprocess.extended_heightfield
 
 data_representation = []
-config_path = pathlib.Path('test_data/')
+config_path = pathlib.Path('config_data/')
+output_path = pathlib.Path('data/')
 
 file_names = os.listdir(config_path)
 
@@ -88,9 +89,14 @@ def cube_data_to_numpy( cylinders ):
     return cubes_np
 
 output_size = 850
+hf_filename_appendix = [ "_entry_hf_0", "_exit_hf_0", "_entry_hf_1", "_exit_hf_2" ]
+
+def print_progress( n ):
+    sys.stdout.write("Processing %s\r" % n)
+    sys.stdout.flush()
 
 for filename in file_names:
-    file = open( config_path/filename, mode = 'r', encoding = 'utf-8' )
+    file = open( config_path/filename, mode = 'r', encoding = 'utf-8' )    
     
     num_spheres   = read_int(file)
     num_cylinders = read_int(file)
@@ -121,14 +127,23 @@ for filename in file_names:
         cubes_np = cube_data_to_numpy( cubes )
         preprocessor.add_cuboids( cubes_np )
 
-    extended_heightfield, normal_map = preprocessor.extract_data_representation( 0.0 )
-    extended_heightfield = extended_heightfield.reshape( ( output_size, output_size, 4 ) )
-
-    extended_heightfield[ extended_heightfield > 256.0 ] = 256.0
-    normal_map = normal_map.squeeze( 2 )
-    normal_map = rf.structured_to_unstructured( normal_map );
-
-    normal_map = ( normal_map + 1.0 ) * 127.5
-
-    normal_map = normal_map.transpose((2,1,0))
-    tifffile.imwrite( filename + "_normal_map.tif", normal_map.astype( np.uint8 ), photometric='rgb')
+    base_filename =  str( pathlib.Path( filename ).stem )
+    print("processing",base_filename)
+    for slice_z in range( 0, 512, 10):
+        extended_heightfield, normal_map = preprocessor.extract_data_representation( slice_z )
+        normal_map = normal_map.squeeze( 2 )
+        normal_map = rf.structured_to_unstructured( normal_map );
+        normal_map = ( normal_map + 1.0 ) * 127.5
+        normal_map = normal_map.transpose((2,1,0))
+       
+        normal_map_filename = output_path / ( base_filename + "_" + str(slice_z) + "_normal.tif" )
+        tifffile.imwrite( normal_map_filename, normal_map.astype( np.uint8 ), photometric='rgb')
+        
+        extended_heightfield = extended_heightfield.reshape( ( output_size, output_size, 4 ) )
+        extended_heightfield[ extended_heightfield > 256.0 ] = 256.0
+        extended_heightfield = np.transpose(extended_heightfield, (2,1,0) )
+        
+        for i in range(4):
+            hf_filename = output_path / ( base_filename + "_" + str(slice_z) + hf_filename_appendix[i] )
+            tifffile.imwrite( hf_filename, extended_heightfield[i,:,:].astype( np.uint16 ), photometric='minisblack')
+        print_progress(slice_z)
