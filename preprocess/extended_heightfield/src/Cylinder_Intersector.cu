@@ -61,8 +61,9 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 	int pixel_index = idy * output_resolution.x + idx;
 
-	// initialize z_buffer
+	// initialize buffer
 	z_buffer[pixel_index] = empty;
+	normal_map[pixel_index] = make_float3(0.5f, 0.5f, 0.5f);
 
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;

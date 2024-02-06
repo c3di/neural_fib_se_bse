@@ -40,3 +40,6 @@ T* allocate_buffer_on_gpu(int3 buffer_size);
 
 template<typename T>
 T* allocate_buffer_on_gpu(int3 buffer_size, T init_value);
+
+template<typename T>
+void call_mem_set_kernel(T* buffer, int3 buffer_size, T init_value);

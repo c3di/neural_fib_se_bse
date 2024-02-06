@@ -108,6 +108,9 @@ std::tuple< py::array_t<float>, py::array_t<float3>>  HeightFieldExtractor::extr
 
 void HeightFieldExtractor::intersect(float image_plane)
 {
+	int3 extended_heightfield_size = make_int3(output_resolution.x, output_resolution.y, max_buffer_length);
+	call_mem_set_kernel<float2>(extended_heightfield_gpu, extended_heightfield_size, empty_interval);
+
 	for (auto intersectors : intersectors) {
 		intersectors->intersect(image_plane);
 		cudaDeviceSynchronize();
