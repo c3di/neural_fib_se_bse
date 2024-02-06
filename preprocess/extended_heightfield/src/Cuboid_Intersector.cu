@@ -193,6 +193,11 @@ __global__ void intersect_cuboid_kernel(Cuboid* primitives,
 			printf("final intersect at %.2f %.2f \n", tmin, tmax);
 
 		bool cut_case = false;
+
+		// handle the case that both intersection points are before the image plane
+		if (tmin < 0.0f && tmax < 0.0f)
+			continue;
+
 		// handle the case that the sphere is cut by the image place 
 		if (tmin < 0.0f)
 		{

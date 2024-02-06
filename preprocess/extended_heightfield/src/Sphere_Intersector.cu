@@ -69,6 +69,11 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 		float exit  = sphere.position.z + square_term;
 
 		bool cut_case = false;
+
+		// handle the case that both intersection points are before the image plane
+		if (entry < image_plane_z && exit < image_plane_z)
+			continue;
+
 		// handle the case that the sphere is cut by the image place 
 		if (entry < image_plane_z)
 		{
