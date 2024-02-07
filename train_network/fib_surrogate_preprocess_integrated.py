@@ -97,7 +97,7 @@ def print_progress( n ):
     sys.stdout.write("Processing %s\r" % n)
     sys.stdout.flush()
 
-for filename in file_names[0:8]:
+for filename in file_names:
     file = open( config_path/filename, mode = 'r', encoding = 'utf-8' )    
     
     num_spheres   = read_int(file)
@@ -115,7 +115,6 @@ for filename in file_names[0:8]:
     for i in range( num_cubes ):
         cubes.append( read_cubes(file) )
 
-    print("\n\n=====\nCreating HeightFieldExtractor")
     preprocessor = preprocess.extended_heightfield.HeightFieldExtractor( (output_size, output_size), 2, 256 )
 
     if num_spheres > 0:
