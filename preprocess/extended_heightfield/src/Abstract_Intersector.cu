@@ -9,6 +9,11 @@
 #include <iostream>
 #include <string>
 
+Intersector::~Intersector()
+{
+	std::cout << "deleting Intersector Interface class" << std::endl;
+}
+
 template<class Primitive>
 Abstract_Intersector<Primitive>::Abstract_Intersector<Primitive>( std::tuple<int, int> output_resolution, int n_hf_entries, int buffer_length )
 	: output_resolution( as_int2(output_resolution) )
@@ -36,10 +41,10 @@ Abstract_Intersector<Primitive>::Abstract_Intersector<Primitive>(float2* extende
 template<class Primitive>
 Abstract_Intersector<Primitive>::~Abstract_Intersector<Primitive>()
 {
+	std::cout << "deleting abstract intersector" << std::endl;
 	delete(extended_heightfield);
 	delete(normal_map);
 	delete(z_buffer);
-	std::cout << "deleting intersector" << std::endl;
 }
 
 

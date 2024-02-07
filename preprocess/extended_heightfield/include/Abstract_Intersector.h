@@ -12,6 +12,7 @@
 class Intersector
 {
 public:
+	virtual ~Intersector();
 	virtual std::tuple< py::array_t<float>, py::array_t<float> > intersect_py(float image_plane) = 0;
 	virtual void intersect(float image_plane) = 0;
 	virtual py::array_t<float3> get_normal_map_py() = 0;

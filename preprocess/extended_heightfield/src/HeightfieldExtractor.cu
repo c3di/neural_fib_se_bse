@@ -48,7 +48,7 @@ HeightFieldExtractor::~HeightFieldExtractor()
 	std::cout << "deleting HeightFieldExtractor" << std::endl;
 	cudaFree(normal_map_gpu);
 	cudaFree(z_buffer_gpu);
-	delete csg_resolver;
+	delete(csg_resolver);
 	cudaFree(result_gpu);
 	cudaFree(extended_heightfield_gpu);
 	cudaFreeHost(result_cpu);
