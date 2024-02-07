@@ -11,7 +11,6 @@
 
 Intersector::~Intersector()
 {
-	std::cout << "deleting Intersector Interface class" << std::endl;
 }
 
 template<class Primitive>
@@ -23,7 +22,6 @@ Abstract_Intersector<Primitive>::Abstract_Intersector<Primitive>( std::tuple<int
 	extended_heightfield = new GPUMappedFloat2Buffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length), empty_interval );
 	normal_map = new GPUMappedFloat3Buffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1) );
 	z_buffer = new GPUMappedFloatBuffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1) );
-	std::cout << "creating intersector" << std::endl;
 }
 
 template<class Primitive>
@@ -35,13 +33,11 @@ Abstract_Intersector<Primitive>::Abstract_Intersector<Primitive>(float2* extende
 	extended_heightfield = new GPUMappedFloat2Buffer(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length), extended_heightfield_gpu);
 	normal_map = new GPUMappedFloat3Buffer(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), normal_map_gpu);
 	z_buffer = new GPUMappedFloatBuffer(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), z_buffer_gpu);
-	std::cout << "creating intersector" << std::endl;
 }
 
 template<class Primitive>
 Abstract_Intersector<Primitive>::~Abstract_Intersector<Primitive>()
 {
-	std::cout << "deleting abstract intersector" << std::endl;
 	delete(extended_heightfield);
 	delete(normal_map);
 	delete(z_buffer);

@@ -40,12 +40,10 @@ HeightFieldExtractor::HeightFieldExtractor( std::tuple<int, int> output_resoluti
 	csg_resolver = new CSG_Resolver(extended_heightfield_gpu, make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), n_hf_entries );
 	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 	normal_map_gpu = allocate_buffer_on_gpu<float3>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
-	std::cout << "creating HeightFieldExtractor" << std::endl;
 }
 
 HeightFieldExtractor::~HeightFieldExtractor()
 {
-	std::cout << "deleting HeightFieldExtractor" << std::endl;
 	cudaFree(normal_map_gpu);
 	cudaFree(z_buffer_gpu);
 	delete(csg_resolver);
@@ -54,7 +52,6 @@ HeightFieldExtractor::~HeightFieldExtractor()
 	cudaFreeHost(result_cpu);
 	for (auto intersector : intersectors)
 	{
-		std::cout << "deleting intersector " << intersector << std::endl;
 		delete(intersector);
 	}
 }
