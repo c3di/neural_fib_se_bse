@@ -42,11 +42,12 @@ spec:
                   mkdir build
                   PYTHON_INCLUDE_DIR=$( python3 -c "from distutils.sysconfig import get_python_inc; print('PYTHON INCLUDE DIRECTORY', get_python_inc());" )
                   PYTHON_LIBRARY=$( python3 -c "import distutils.sysconfig as sysconfig; print('PYTHON LIBRARY DIRECTORY', sysconfig.get_config_var('LIBDIR'));" )
+                  PYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") ..
                   cmake -B build -S .
                   cd build
                   make -j 8 extended_heightfield
                   cd /basedir/post_fib_se_bse_surrogate/preprocess
-                  cp build/bin/libextended_heightfield.so /basedir/post_fib_se_bse_surrogate/preprocess/
+                  cp build/bin/libextended_heightfield.so /basedir/post_fib_se_bse_surrogate/train_network/preprocess/
                   cd /basedir/post_fib_se_bse_surrogate/train_network
                   python3 fib_surrogate_distributed.py
                   sh -ec "while :; do echo '.'; sleep 5; done"
