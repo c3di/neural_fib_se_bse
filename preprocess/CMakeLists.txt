@@ -45,6 +45,7 @@ message(STATUS "Python_LIBRARIES:${Python_LIBRARIES}")
 
 set(pybind11_DIR "C:/Python39/Lib/site-packages/pybind11/share/cmake/pybind11")
 find_package(pybind11 REQUIRED)
+message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")
 
 set(PYBIND11_PYTHON_VERSION ${Python_VERSION})
 add_definitions(-DPYBIND11_PYTHON_VERSION="${Python_VERSION}")
@@ -110,6 +111,7 @@ endif(MSVC)
 
 set_target_properties(extended_heightfield PROPERTIES CUDA_ARCHITECTURES ${COMPUTE_CAPABILITY})
 set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties( extended_heightfield PROPERTIES PREFIX "" )
 
 INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pyproj" PLATFORM "Any CPU")
 
