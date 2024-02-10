@@ -2,7 +2,7 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/numpy.h>
 
-#include "HeightFieldExtractor.h"
+#include "HeightfieldExtractor.h"
 #include "CSG_Resolver.h"
 #include "Sphere_Intersector.h"
 #include "Cylinder_Intersector.h"
