@@ -4,14 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>c579c70a-d6c7-44a0-9d4d-f3d3f2f9eadd</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>python_binding.py</StartupFile>
-    <WorkingDirectory>F:\development\post_fib_se_bse_surrogate\preprocess</WorkingDirectory>
+    <StartupFile>fib_surrogate_preprocess_integrated.py</StartupFile>
+    <WorkingDirectory>C:\development\post_fib_se_bse_surrogate\train_network</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>python_binding</Name>
     <RootNamespace>python_binding</RootNamespace>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <EnableNativeCodeDebugging>True</EnableNativeCodeDebugging>
-    <InterpreterId>Global|PythonCore|3.11</InterpreterId>
+    <InterpreterId>Global|PythonCore|3.12</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <TestFramework>Pytest</TestFramework>
     <CommandLineArguments>
@@ -33,17 +33,18 @@
     <SearchPath>Debug</SearchPath>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="python_binding.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <InterpreterReference Include="Global|PythonCore|3.11" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\build\extended_heightfield.vcxproj">
       <Name>extended_heightfield</Name>
       <Project>{8110b838-0aaf-3897-9842-4b33b8171a46}</Project>
       <Private>True</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.12" />
+    <InterpreterReference Include="Global|PythonCore|3.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="fib_surrogate_preprocess_integrated.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
