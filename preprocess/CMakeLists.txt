@@ -34,7 +34,7 @@ set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heigh
 find_package(CUDA  REQUIRED)
 include_directories("${CUDA_INCLUDE_DIRS}")
 
-find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+find_package(Python 3.10 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 
 message(STATUS "Python_FOUND:${Python_FOUND}")
 message(STATUS "Python_VERSION:${Python_VERSION}")
@@ -105,6 +105,7 @@ endif(MSVC)
 
 set_target_properties(extended_heightfield PROPERTIES CUDA_ARCHITECTURES ${COMPUTE_CAPABILITY})
 set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 if(UNIX AND CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
 endif()
