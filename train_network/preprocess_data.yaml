@@ -47,7 +47,8 @@ spec:
                   make -j 8 extended_heightfield
                   cd /basedir/post_fib_se_bse_surrogate/preprocess
                   cp build/bin/libextended_heightfield.so /basedir/post_fib_se_bse_surrogate/preprocess/
-                  python3 post_fib_se_bse_surrogate/train_network/fib_surrogate_distributed.py
+                  cd /basedir/post_fib_se_bse_surrogate/train_network
+                  python3 fib_surrogate_distributed.py
                   sh -ec "while :; do echo '.'; sleep 5; done"
               ports:
                 - containerPort: 8888
