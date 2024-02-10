@@ -46,6 +46,9 @@ message(STATUS "Python_LIBRARIES:${Python_LIBRARIES}")
 set(pybind11_DIR "C:/Python39/Lib/site-packages/pybind11/share/cmake/pybind11")
 find_package(pybind11 REQUIRED)
 
+set(PYBIND11_PYTHON_VERSION ${Python_VERSION})
+add_definitions(-DPYBIND11_PYTHON_VERSION="${Python_VERSION}")
+
 include_directories(${Python_INCLUDE_DIRS})
 include_directories(${Python_NumPy_INCLUDE_DIRS})
 include_directories(${pybind11_INCLUDE_DIRS})
