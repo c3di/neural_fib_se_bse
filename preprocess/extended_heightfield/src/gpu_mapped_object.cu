@@ -40,7 +40,7 @@ GPUMappedObject<DTYPE>::GPUMappedObject(int3 dimensions, DTYPE init_value)
 	, ownsGPUBuffer(true)
 	, dimensions(dimensions)
 {
-	_gpu_ptr = allocate_buffer_on_gpu(dimensions);
+	_gpu_ptr = allocate_buffer_on_gpu<DTYPE>(dimensions);
 	call_mem_set_kernel(init_value);
 	cudaMallocHost(&_cpu_ptr, sizeof(DTYPE) * dimensions.x * dimensions.y * dimensions.z);
 	for ( size_t i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++ )
