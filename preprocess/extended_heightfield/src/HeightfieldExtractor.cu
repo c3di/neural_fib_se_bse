@@ -1,4 +1,4 @@
-#include "HeightFieldExtractor.h"
+#include "HeightfieldExtractor.h"
 #include "Sphere_Intersector.h"
 #include "Cylinder_Intersector.h"
 #include "Cuboid_Intersector.h"
