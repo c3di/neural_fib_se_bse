@@ -5,7 +5,7 @@
 #include <iterator>
 #include <vector>
 
-#include "HeightFieldExtractor.h"
+#include "HeightfieldExtractor.h"
 #include "sphere.h"
 #include "cylinder.h"
 #include "cuboid.h"
