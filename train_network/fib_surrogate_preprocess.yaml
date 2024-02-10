@@ -1,0 +1,78 @@
+# Volcano example for pytorch
+# Based on
+# https://yangkky.github.io/2019/07/08/distributed-pytorch-tutorial.html
+# https://github.com/yangkky/distributed_tutorial/blob/master/src/mnist-distributed.py
+apiVersion: batch.volcano.sh/v1alpha1
+kind: Job
+metadata:
+  name: preprocess-data
+  namespace: tida01
+spec:
+  minAvailable: 1
+  schedulerName: volcano
+  queue: asr-queue-dahmen
+  plugins:
+    env: []
+    svc: []
+  policies:
+    - event: PodEvicted
+      action: RestartJob
+  tasks:
+    - replicas: 1
+      name: worker
+      policies:
+        - event: TaskCompleted
+          action: CompleteJob
+      template:
+        spec:
+          imagePullSecrets:
+            - name: default-secret
+          containers:
+            - name: pytorch
+              image: ghcr.io/dmrub/fastai:11.8.0-runtime-ubuntu22.04
+              command:
+                - sh
+                - -c
+                - |
+                  set -xe;
+                  export MASTER_ADDR=$(head -n1 /etc/volcano/worker.host);
+                  export MASTER_PORT=8888;
+                  cd /basedir/post_fib_se_bse_surrogate/preprocess
+                  rm -rf build
+                  mkdir build
+                  PYTHON_INCLUDE_DIR=$( python3 -c "from distutils.sysconfig import get_python_inc; print('PYTHON INCLUDE DIRECTORY', get_python_inc());" )
+                  PYTHON_LIBRARY=$( python3 -c "import distutils.sysconfig as sysconfig; print('PYTHON LIBRARY DIRECTORY', sysconfig.get_config_var('LIBDIR'));" )
+                  cmake -B build -S .
+                  cd build
+                  make -j 8 extended_heightfield
+                  cd /basedir/post_fib_se_bse_surrogate/preprocess
+                  cp build/bin/extended_heightfield /basedir/post_fib_se_bse_surrogate/preprocess/
+                  python3 post_fib_se_bse_surrogate/train_network/fib_surrogate_distributed.py
+                  sh -ec "while :; do echo '.'; sleep 5; done"
+                  ERR=$?;
+                  echo "Error: $ERR";
+                  if [ $ERR -eq 134 ]; then
+                    ls -lah;
+                    echo "Process PID: $$";
+                    while true; do sleep 10; done;
+                  fi
+                  exit $ERR;
+              ports:
+                - containerPort: 8888
+                  name: pytorch-port
+              resources:
+                limits:
+                  nvidia.com/gpu: "1"
+              workingDir: /basedir/
+              volumeMounts:
+                - mountPath: /basedir
+                  name: data-volume
+                - mountPath: /training-data
+                  name: training-data-cache
+          volumes:
+            - name: data-volume
+              persistentVolumeClaim:
+                claimName: tida01-pvc
+            - name: training-data-cache
+              emptyDir: {}
+          restartPolicy: OnFailure
