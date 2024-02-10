@@ -1,5 +1,3 @@
-#pragma once
-
 #include "CSG_Resolver.h"
 
 #include "cuda_utils.h"
