@@ -56,13 +56,16 @@ include_directories(${pybind11_INCLUDE_DIRS})
 include_directories(${EXTENDED_HEIGHTFIELD_INCLUDE_DIR})
 				  
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
+# add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
+pybind11_add_module(extended_heightfield SHARED ${LIBRARY_SOURCES})
 
 if(MSVC)
 	target_link_libraries(extended_heightfield ${Python_LIBRARY_RELEASE})
 else()
 	target_link_libraries(extended_heightfield ${Python_LIBRARIES})
 endif()
+
+target_link_libraries(extended_heightfield PRIVATE ${MY_LIBRARIES})
 
 target_link_libraries(extended_heightfield
 					  Python::NumPy					  
