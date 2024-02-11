@@ -64,6 +64,10 @@ template float2* allocate_buffer_on_gpu<float2>(int3 buffer_size, float2);
 template float3* allocate_buffer_on_gpu<float3>(int3 buffer_size);
 template float3* allocate_buffer_on_gpu<float3>(int3 buffer_size, float3);
 
+template __host__ void call_mem_set_kernel<float>(float* buffer, int3 buffer_size, float init_value);
+template __host__ void call_mem_set_kernel<float2>(float2* buffer, int3 buffer_size, float2 init_value);
+template __host__ void call_mem_set_kernel<float3>(float3* buffer, int3 buffer_size, float3 init_value);
+
 template __global__ void mem_set_kernel<float>(float* buffer, int3 buffer_size, float init_value);
 template __global__ void mem_set_kernel<float2>(float2* buffer, int3 buffer_size, float2 init_value);
 template __global__ void mem_set_kernel<float3>(float3* buffer, int3 buffer_size, float3 init_value);
