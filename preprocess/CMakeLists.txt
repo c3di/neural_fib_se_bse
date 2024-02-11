@@ -114,7 +114,7 @@ endif(MSVC)
 
 set_target_properties(extended_heightfield PROPERTIES CUDA_ARCHITECTURES ${COMPUTE_CAPABILITY})
 set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties( extended_heightfield PROPERTIES PREFIX "" )
+# set_target_properties( extended_heightfield PROPERTIES PREFIX "" )
 
 INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pyproj" PLATFORM "Any CPU")
 
