@@ -22,7 +22,7 @@ set(CMAKE_USE_RELATIVE_PATHS FALSE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(COMPUTE_CAPABILITY "60" CACHE STRING "The CUDA compute capability that the GPU kernels should be compiled for.")
-set(CMAKE_CUDA_RUNTIME_LIBRARY STATIC)
+set(CMAKE_CUDA_RUNTIME_LIBRARY DYNAMIC)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
 include(GetSourceFiles)
@@ -36,16 +36,17 @@ set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heigh
 find_package(CUDA  REQUIRED)
 include_directories("${CUDA_INCLUDE_DIRS}")
 
-find_package(Python 3.10 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+find_package(Python 3.10 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed NumPy)
 
 message(STATUS "Python_FOUND:${Python_FOUND}")
 message(STATUS "Python_VERSION:${Python_VERSION}")
+message(STATUS "Python_COMPILER:${Python_COMPILER}")
+message(STATUS "Python_INCLUDE_DIRS:${Python_INCLUDE_DIRS}")
 message(STATUS "Python_Development_FOUND:${Python_Development_FOUND}")
 message(STATUS "Python_LIBRARIES:${Python_LIBRARIES}")
 
 set(pybind11_DIR "C:/Python39/Lib/site-packages/pybind11/share/cmake/pybind11")
 find_package(pybind11 REQUIRED)
-message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")
 
 set(PYBIND11_PYTHON_VERSION ${Python_VERSION})
 add_definitions(-DPYBIND11_PYTHON_VERSION="${Python_VERSION}")
@@ -56,20 +57,14 @@ include_directories(${pybind11_INCLUDE_DIRS})
 include_directories(${EXTENDED_HEIGHTFIELD_INCLUDE_DIR})
 				  
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-# add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
-pybind11_add_module(extended_heightfield SHARED ${LIBRARY_SOURCES})
+add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
+target_compile_definitions(extended_heightfield PUBLIC -Dextended_heightfield_EXPORTS)
+# pybind11_add_module(extended_heightfield SHARED ${LIBRARY_SOURCES} )
 
-if(MSVC)
-	target_link_libraries(extended_heightfield ${Python_LIBRARY_RELEASE})
-else()
-	target_link_libraries(extended_heightfield ${Python_LIBRARIES})
-endif()
-
-target_link_libraries(extended_heightfield PRIVATE ${MY_LIBRARIES})
-
-target_link_libraries(extended_heightfield
-					  Python::NumPy					  
-				      cudart
+target_link_libraries(extended_heightfield PUBLIC
+      pybind11::module
+      Python::NumPy
+			cudart
 )
 
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -114,7 +109,6 @@ endif(MSVC)
 
 set_target_properties(extended_heightfield PROPERTIES CUDA_ARCHITECTURES ${COMPUTE_CAPABILITY})
 set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE ON)
-# set_target_properties( extended_heightfield PROPERTIES PREFIX "" )
 
 INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pyproj" PLATFORM "Any CPU")
 
@@ -125,12 +119,18 @@ endif()
 add_executable(cli "cli/main.cpp" )
 add_dependencies(cli extended_heightfield)
 
-
 if(MSVC)
-	target_link_directories(cli PUBLIC "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
-	target_link_libraries(cli extended_heightfield.lib)
+  target_link_directories(cli PUBLIC "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
 	target_link_libraries(cli ${Python_LIBRARY_RELEASE})
+  target_link_libraries(cli extended_heightfield.lib)
 else()
-	# target_link_libraries(cli extended_heightfield.lib)
+  target_link_directories(cli PUBLIC "/usr/local/cuda/lib64")
 	target_link_libraries(cli ${Python_LIBRARIES})
+	target_link_libraries(cli ${CUDA_LIBRARIES})
+
+  set ( EXTENDED_HEIGHTFIELD_LIB extended_heightfield )
+  link_directories( /basedir/post_fib_se_bse_surrogate/preprocess/build/bin/ )
+
+	target_link_libraries(cli ${EXTENDED_HEIGHTFIELD_LIB} )  
 endif()
+
