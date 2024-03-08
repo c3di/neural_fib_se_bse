@@ -11,8 +11,8 @@ from scipy.spatial.transform import Rotation
 import extended_heightfield
 
 data_representation = []
-config_path = pathlib.Path('config_data/')
-output_path = pathlib.Path('data/')
+config_path = pathlib.Path('/mnt/data/config_data/test/')
+output_path = pathlib.Path('/mnt/data/test_data/')
 
 file_names = os.listdir(config_path)
 
@@ -75,7 +75,7 @@ def cylinder_data_to_numpy( cylinders ):
     return cylinders_np
 
 def cube_data_to_numpy( cylinders ):
-    cubes_np        = np.zeros( (len(cubes), 8), dtype=np.float32 )
+    cubes_np        = np.zeros( (len(cubes), 10), dtype=np.float32 )
     for i,cube in enumerate( cubes ):
         _,x,y,z,euler1,euler2,euler3,r = cube
         cubes_np[i,0] = x + 0.5
@@ -89,7 +89,7 @@ def cube_data_to_numpy( cylinders ):
     return cubes_np
 
 output_size = 850
-hf_filename_appendix = [ "_entry_hf_0", "_exit_hf_0", "_entry_hf_1", "_exit_hf_2" ]
+hf_filename_appendix = [ "_entry_hf_0.tif", "_exit_hf_0.tif", "_entry_hf_1.tif", "_exit_hf_2.tif" ]
 
 import time
 
