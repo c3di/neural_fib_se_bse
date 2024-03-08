@@ -8,7 +8,7 @@ import numpy as np
 import numpy.lib.recfunctions as rf
 from scipy.spatial.transform import Rotation
 
-import preprocess.extended_heightfield
+import extended_heightfield
 
 data_representation = []
 config_path = pathlib.Path('config_data/')
@@ -115,7 +115,7 @@ for filename in file_names:
     for i in range( num_cubes ):
         cubes.append( read_cubes(file) )
 
-    preprocessor = preprocess.extended_heightfield.HeightFieldExtractor( (output_size, output_size), 2, 256 )
+    preprocessor = extended_heightfield.HeightFieldExtractor( (output_size, output_size), 2, 256 )
 
     if num_spheres > 0:
         spheres_np = sphere_data_to_numpy( spheres )
@@ -132,7 +132,7 @@ for filename in file_names:
     base_filename =  str( pathlib.Path( filename ).stem )
     print("processing",base_filename)
     for slice_z in range( 0, 512, 10):
-        extended_heightfield, normal_map = preprocessor.extract_data_representation( slice_z )
+        ext_heightfield, normal_map = preprocessor.extract_data_representation( slice_z )
         normal_map = normal_map.squeeze( 2 )
         normal_map = rf.structured_to_unstructured( normal_map );
         normal_map = ( normal_map + 1.0 ) * 127.5
@@ -141,11 +141,11 @@ for filename in file_names:
         normal_map_filename = output_path / ( base_filename + "_" + str(slice_z) + "_normal.tif" )
         tifffile.imwrite( normal_map_filename, normal_map.astype( np.uint8 ), photometric='rgb')
         
-        extended_heightfield = extended_heightfield.reshape( ( output_size, output_size, 4 ) )
-        extended_heightfield[ extended_heightfield > 256.0 ] = 256.0
-        extended_heightfield = np.transpose(extended_heightfield, (2,1,0) )
+        ext_heightfield = ext_heightfield.reshape( ( output_size, output_size, 4 ) )
+        ext_heightfield[ ext_heightfield > 256.0 ] = 256.0
+        ext_heightfield = np.transpose(ext_heightfield, (2,1,0) )
         
         for i in range(4):
             hf_filename = output_path / ( base_filename + "_" + str(slice_z) + hf_filename_appendix[i] )
-            tifffile.imwrite( hf_filename, extended_heightfield[i,:,:].astype( np.uint16 ), photometric='minisblack')
+            tifffile.imwrite( hf_filename, ext_heightfield[i,:,:].astype( np.uint16 ), photometric='minisblack')
         print_progress(slice_z)
