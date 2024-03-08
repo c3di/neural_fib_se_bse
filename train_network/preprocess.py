@@ -115,7 +115,7 @@ for filename in file_names:
     for i in range( num_cubes ):
         cubes.append( read_cubes(file) )
 
-    preprocessor = preprocess.extended_heightfield.HeightFieldExtractor( (output_size, output_size), 2, 256 )
+    preprocessor = extended_heightfield.HeightFieldExtractor( (output_size, output_size), 2, 256 )
 
     if num_spheres > 0:
         spheres_np = sphere_data_to_numpy( spheres )
