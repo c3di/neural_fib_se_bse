@@ -8,7 +8,7 @@ import numpy as np
 import numpy.lib.recfunctions as rf
 from scipy.spatial.transform import Rotation
 
-import preprocess.extended_heightfield
+import extended_heightfield
 
 data_representation = []
 config_path = pathlib.Path('config_data/')
