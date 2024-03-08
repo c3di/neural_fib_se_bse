@@ -29,7 +29,7 @@ spec:
             - name: default-secret
           containers:
             - name: pytorch
-              image: ghcr.io/dmrub/fastai:11.8.0-runtime-ubuntu22.04
+              image: ghcr.io/timdahmen/fastai-11.8.0-runtime-cuda-toolkit-ubuntu22.04:latest
               command:
                 - sh
                 - -c
