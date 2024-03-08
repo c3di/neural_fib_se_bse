@@ -45,7 +45,7 @@ def read_cylinder( file ):
     return data
 
 def read_cubes( file ):
-    data = read_data( file, 10 )
+    data = read_data( file, 8 )
     return data
 
 def sphere_data_to_numpy( spheres ):
@@ -75,17 +75,17 @@ def cylinder_data_to_numpy( cylinders ):
     return cylinders_np
 
 def cube_data_to_numpy( cylinders ):
-    cubes_np        = np.zeros( (len(cubes), 10), dtype=np.float32 )
+    cubes_np        = np.zeros( (len(cubes), 8), dtype=np.float32 )
     for i,cube in enumerate( cubes ):
-        _,x,y,z,euler1,euler2,euler3,r1,r2,r3 = cube
+        _,x,y,z,euler1,euler2,euler3,r = cube
         cubes_np[i,0] = x + 0.5
         cubes_np[i,1] = y + 0.5
         cubes_np[i,2] = z + 0.5
         rotation_quaternion = Rotation.from_euler("ZXZ", [euler1,euler2,euler3]).as_quat()
         cubes_np[i,3:7] = rotation_quaternion
-        cubes_np[i,7] = r1
-        cubes_np[i,8] = r2
-        cubes_np[i,9] = r3
+        cubes_np[i,7] = r
+        cubes_np[i,8] = r
+        cubes_np[i,9] = r
     return cubes_np
 
 output_size = 850
