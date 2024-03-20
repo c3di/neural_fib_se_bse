@@ -81,7 +81,7 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 			cut_case = true;
 		}
 
-		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( entry, exit );
+		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( entry - image_plane_z, exit - image_plane_z);
 		hit_index++;
 
 		// write the normal map
