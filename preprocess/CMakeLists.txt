@@ -8,7 +8,7 @@ set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --diag-suppress 1388")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --diag-suppress 1394")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -fvisibility=default")
+# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -fvisibility=default")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=default")
 
 message(STATUS "CMAKE_CUDA_COMPILER = ${CMAKE_CUDA_COMPILER}")
