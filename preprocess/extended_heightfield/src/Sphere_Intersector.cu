@@ -31,9 +31,6 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 
 	int pixel_index = idy * output_resolution.x + idx;
 
-	// initialize z_buffer
-	z_buffer[pixel_index] = empty;
-
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
@@ -85,9 +82,9 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 		hit_index++;
 
 		// write the normal map
-		if (entry < z_buffer[pixel_index])
+		if (entry - image_plane_z < z_buffer[pixel_index])
 		{
-			z_buffer[pixel_index] = entry;
+			z_buffer[pixel_index] = entry - image_plane_z;
 			if (cut_case)
 			{
 				normal_map[pixel_index] = make_float3(0.0f, 0.0f, 1.0f);

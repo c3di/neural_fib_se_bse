@@ -61,9 +61,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 	int pixel_index = idy * output_resolution.x + idx;
 
-	// initialize z_buffer
-	z_buffer[pixel_index] = empty;
-
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
