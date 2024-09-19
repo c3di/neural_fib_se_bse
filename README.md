@@ -10,7 +10,8 @@ model performs well on arbitrary microstructures like
 systems of cubes, even though it was trained on structures 
 consisting of spheres and cylinders only.
 
-The method is described in detail in this publication
+The method is described in detail in this publication:
+
 [https://openreview.net/attachment?id=SwO84a6yA5&name=pdf]
 
 ## Citing
