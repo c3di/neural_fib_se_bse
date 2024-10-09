@@ -16,7 +16,7 @@ The method is described in detail in this publication:
 
 ## Citing
 If you use our package, please cite this paper:
-
+```
 @inproceedings{pub15015,
     author = { Dahmen, Tim and Rottmayer, Niklas and Kronenberger, Markus and Schladitz, Katja and Redenbach, Claudia },
     title = {A Neural Model for High-Performance Scanning Electron Microscopy Image Simulation of Porous Materials},
@@ -25,3 +25,4 @@ If you use our package, please cite this paper:
     month = {6},
     publisher = {CFV}
 }
+```
