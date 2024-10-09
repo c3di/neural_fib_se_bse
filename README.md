@@ -20,7 +20,8 @@ If you use our package, please cite this paper:
 @inproceedings{pub15015,
     author = { Dahmen, Tim and Rottmayer, Niklas and Kronenberger, Markus and Schladitz, Katja and Redenbach, Claudia },
     title = {A Neural Model for High-Performance Scanning Electron Microscopy Image Simulation of Porous Materials},
-    booktitle = {Synthetic Data for Computer Vision Workshop @ CVPR 2024. CVPR Workshop on Synthetic Data for Computer Vision (SynData4CV-2024), befindet sich CVPR 2024, June 18-18, Seattle, OR, United States},
+    booktitle = {CVPR Workshop on Synthetic Data for Computer Vision (SynData4CV-2024)},
+    address = {Seattle, OR, United States},
     year = {2024},
     month = {6},
     publisher = {CFV}
