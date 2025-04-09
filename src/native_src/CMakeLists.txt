@@ -33,10 +33,8 @@ generate_source_tree(LIBRARY_SOURCES "${DIRS}" "${FILE_TYPES}")
 
 set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heightfield/include")
 
-find_package(CUDA  REQUIRED)
-include_directories("${CUDA_INCLUDE_DIRS}")
-
-find_package(Python 3.10 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed NumPy)
+# find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed NumPy)
+find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed)
 
 message(STATUS "Python_FOUND:${Python_FOUND}")
 message(STATUS "Python_VERSION:${Python_VERSION}")
@@ -45,7 +43,7 @@ message(STATUS "Python_INCLUDE_DIRS:${Python_INCLUDE_DIRS}")
 message(STATUS "Python_Development_FOUND:${Python_Development_FOUND}")
 message(STATUS "Python_LIBRARIES:${Python_LIBRARIES}")
 
-set(pybind11_DIR "C:/Python39/Lib/site-packages/pybind11/share/cmake/pybind11")
+# set(pybind11_DIR "C:/Python39/Lib/site-packages/pybind11/share/cmake/pybind11")
 find_package(pybind11 REQUIRED)
 
 set(PYBIND11_PYTHON_VERSION ${Python_VERSION})
@@ -63,8 +61,8 @@ target_compile_definitions(extended_heightfield PUBLIC -Dextended_heightfield_EX
 
 target_link_libraries(extended_heightfield PUBLIC
       pybind11::module
-      Python::NumPy
-			cudart
+      # Python::NumPy
+	  cudart
 )
 
 IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

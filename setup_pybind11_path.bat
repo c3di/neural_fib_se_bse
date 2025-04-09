@@ -1,0 +1,2 @@
+set CMAKE_PREFIX_PATH=C:/Users/tida01/AppData/Local/anaconda3/envs/sem_se_bse/Lib/site-packages/numpy;C:/Users/tida01/AppData/Local/anaconda3/envs/sem_se_bse/Lib/site-packages/pybind11/share/cmake/pybind11
+echo %CMAKE_PREFIX_PATH%

@@ -3,7 +3,7 @@ name = "neural_fib_se_bse"
 requires-python = ">=3.7"
 readme = "README.md"
 license = { "file" = "LICENSE" }
-dependencies = ["numpy", "fastai"]
+dependencies = ["numpy", "numpy-devel", "fastai"]
 dynamic = ["version", "description"]
 
 [build-system] # How pip and other frontends should build this project
@@ -11,14 +11,15 @@ requires = ["py-build-cmake~=0.4.3"]
 build-backend = "py_build_cmake.build"
 
 [tool.py-build-cmake.module] # Where to find the Python module to package
-directory = "src-python"
+name = "neural_fib_se_bse"
+directory = "src"
 
 [tool.py-build-cmake.sdist] # What to include in source distributions
-include = ["preprocess/*"]
+include = ["CmakeLists.txt", "src/native_src"]
 
 [tool.py-build-cmake.cmake] # How to build the CMake project
-build_type = "RelWithDebInfo"
-source_path = "preprocess"
+build_type = "Release"
+source_path = "src/native_src/"
 build_args = ["-j"]
 install_components = ["python_modules"]
 
