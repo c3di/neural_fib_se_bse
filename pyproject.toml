@@ -1,9 +1,12 @@
 [project] # Project metadata
-name = "neural_fib_se_bse"
-requires-python = ">=3.7"
+name = "neural-fib-se-bse"
+authors = [
+  {name = "Tim Dahmen", email = "tim.dahmen@hs-aalen.de"}
+]
+requires-python = ">=3.12"
 readme = "README.md"
 license = { "file" = "LICENSE" }
-dependencies = ["numpy", "numpy-devel", "fastai"]
+dependencies = ["numpy", "fastai"]
 dynamic = ["version", "description"]
 
 [build-system] # How pip and other frontends should build this project
@@ -11,16 +14,17 @@ requires = ["py-build-cmake~=0.4.3"]
 build-backend = "py_build_cmake.build"
 
 [tool.py-build-cmake.module] # Where to find the Python module to package
-name = "neural_fib_se_bse"
-directory = "src"
+name = "neural_fib_se_bse" # preprocess_module should be under src
+directory = "src"		   # 
 
 [tool.py-build-cmake.sdist] # What to include in source distributions
-include = ["CmakeLists.txt", "src/native_src"]
+include = ["CmakeLists.txt", "src/native_src/*"]
 
 [tool.py-build-cmake.cmake] # How to build the CMake project
 build_type = "Release"
 source_path = "src/native_src/"
 build_args = ["-j"]
-install_components = ["python_modules"]
+install_components = ["python_modules", "python_stubs"]
 
 [tool.py-build-cmake.stubgen] # Whether and how to generate typed stub files
+args = ["-v"]

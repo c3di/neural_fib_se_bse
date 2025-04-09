@@ -1,134 +1,56 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(extended_heightfield CXX CUDA)
+# project(neural-fib-se-bse-project CXX CUDA)
+project(neural-fib-se-bse-project LANGUAGES CXX CUDA VERSION 1.1.0 )
+set(PY_VERSION_SUFFIX "")
+set(PY_FULL_VERSION ${PROJECT_VERSION}${PY_VERSION_SUFFIX})
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_STANDARD 14)
-set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --diag-suppress 1388")
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --diag-suppress 1394")
-# set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -fvisibility=default")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=default")
+# Find the Python interpreter and the development files
+if (CMAKE_CROSSCOMPILING AND NOT (APPLE AND "$ENV{CIBUILDWHEEL}" STREQUAL "1"))
+    find_package(Python3 REQUIRED COMPONENTS Development.Module)
+else()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
+endif()
+
+# Find the pybind11 package
+include(cmake/QueryPythonForPybind11.cmake)
+find_pybind11_python_first()
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(GetSourceFiles)
+
+set(FILE_TYPES *.c *.cc *.cu *.cuh *.cpp *.h *.hpp *.tcc)
+find_directories(DIRS neural_fib_se_bse "${FILE_TYPES}")
+generate_source_tree(LIBRARY_SOURCES "${DIRS}" "${FILE_TYPES}")
 
 message(STATUS "CMAKE_CUDA_COMPILER = ${CMAKE_CUDA_COMPILER}")
 message(STATUS "CMAKE_CUDA_COMPILER_ID = ${CMAKE_CUDA_COMPILER_ID}")
 message(STATUS "CMAKE_CUDA_COMPILER_VERSION = ${CMAKE_CUDA_COMPILER_VERSION}")
 
-set(CMAKE_BINARY_DIR ${PROJECT_BINARY_DIR})
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH})
-set(CMAKE_USE_RELATIVE_PATHS FALSE)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-set(COMPUTE_CAPABILITY "60" CACHE STRING "The CUDA compute capability that the GPU kernels should be compiled for.")
-set(CMAKE_CUDA_RUNTIME_LIBRARY DYNAMIC)
-set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
-
-include(GetSourceFiles)
-
-set(FILE_TYPES *.c *.cc *.cu *.cuh *.cpp *.h *.hpp *.tcc)
-find_directories(DIRS extended_heightfield "${FILE_TYPES}")
-generate_source_tree(LIBRARY_SOURCES "${DIRS}" "${FILE_TYPES}")
-
-set(EXTENDED_HEIGHTFIELD_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/extended_heightfield/include")
-
-# find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed NumPy)
-find_package(Python 3.9 REQUIRED COMPONENTS Interpreter Development.Module Development.Embed)
-
-message(STATUS "Python_FOUND:${Python_FOUND}")
-message(STATUS "Python_VERSION:${Python_VERSION}")
-message(STATUS "Python_COMPILER:${Python_COMPILER}")
-message(STATUS "Python_INCLUDE_DIRS:${Python_INCLUDE_DIRS}")
-message(STATUS "Python_Development_FOUND:${Python_Development_FOUND}")
-message(STATUS "Python_LIBRARIES:${Python_LIBRARIES}")
-
-# set(pybind11_DIR "C:/Python39/Lib/site-packages/pybind11/share/cmake/pybind11")
-find_package(pybind11 REQUIRED)
-
-set(PYBIND11_PYTHON_VERSION ${Python_VERSION})
-add_definitions(-DPYBIND11_PYTHON_VERSION="${Python_VERSION}")
-
-include_directories(${Python_INCLUDE_DIRS})
-include_directories(${Python_NumPy_INCLUDE_DIRS})
-include_directories(${pybind11_INCLUDE_DIRS})
-include_directories(${EXTENDED_HEIGHTFIELD_INCLUDE_DIR})
-				  
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-add_library(extended_heightfield SHARED ${LIBRARY_SOURCES} )
-target_compile_definitions(extended_heightfield PUBLIC -Dextended_heightfield_EXPORTS)
-# pybind11_add_module(extended_heightfield SHARED ${LIBRARY_SOURCES} )
-
-target_link_libraries(extended_heightfield PUBLIC
-      pybind11::module
-      # Python::NumPy
-	  cudart
+# Compile the example Python module
+pybind11_add_module(_preprocess_module MODULE ${LIBRARY_SOURCES})
+set_target_properties(_preprocess_module PROPERTIES
+    DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}${PYTHON_MODULE_DEBUG_POSTFIX}")
+target_compile_definitions(_preprocess_module PRIVATE
+    MODULE_NAME=$<TARGET_FILE_BASE_NAME:_preprocess_module>
+    VERSION_INFO="${PY_FULL_VERSION}"
 )
 
-IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    # if gcc version <9 we also need to link the stdc++fs library to support c++17's filesystem extension
-    IF (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-        target_link_libraries(${PROJECT_NAME} stdc++fs)
-    ENDIF()
-ENDIF()
+set(PREPROCESS_MODULE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/neural_fib_se_bse/include")
+include_directories(${PREPROCESS_MODULE_INCLUDE_DIR})
 
-# Copy compiled lib as python module
-if(MSVC)
-  add_custom_command(
-    TARGET extended_heightfield
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-    "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/extended_heightfield.dll"
-    "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/$<CONFIG>/extended_heightfield.pyd"
-  )
-else()
-  add_custom_command(
-    TARGET extended_heightfield
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-    "${CMAKE_BINARY_DIR}/bin/libextended_heightfield.so"
-    "${CMAKE_CURRENT_SOURCE_DIR}/extended_heightfield.so"
-  )
+target_link_libraries(_preprocess_module PUBLIC cudart)
+
+# Hide all symbols by default (including external libraries on Linux)
+set_target_properties(_preprocess_module PROPERTIES
+    CXX_VISIBILITY_PRESET "hidden"
+    VISIBILITY_INLINES_HIDDEN true)
+if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_options(_preprocess_module PRIVATE "LINKER:--exclude-libs,ALL")
 endif()
 
-# Copy necessary dlls to target directory
-if(MSVC)
-	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Debug/")
-	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/Release/")
-	file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/python_binding/RelWithDebInfo/")
-	add_custom_command(
-		TARGET extended_heightfield
-		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-		"${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cudart64_110.dll"
-		"${CMAKE_CURRENT_SOURCE_DIR}/python_binding/$<CONFIG>/"
-	)
-endif(MSVC)
-
-set_target_properties(extended_heightfield PROPERTIES CUDA_ARCHITECTURES ${COMPUTE_CAPABILITY})
-set_target_properties(extended_heightfield PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-INCLUDE_EXTERNAL_MSPROJECT(python_binding "../python_binding/python_binding.pyproj" PLATFORM "Any CPU")
-
-if(MSVC)
-  add_dependencies(python_binding extended_heightfield)
-endif()
-
-add_executable(cli "cli/main.cpp" )
-add_dependencies(cli extended_heightfield)
-
-if(MSVC)
-  target_link_directories(cli PUBLIC "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/")
-	target_link_libraries(cli ${Python_LIBRARY_RELEASE})
-  target_link_libraries(cli extended_heightfield.lib)
-else()
-  target_link_directories(cli PUBLIC "/usr/local/cuda/lib64")
-	target_link_libraries(cli ${Python_LIBRARIES})
-	target_link_libraries(cli ${CUDA_LIBRARIES})
-
-  set ( EXTENDED_HEIGHTFIELD_LIB extended_heightfield )
-  link_directories( /basedir/post_fib_se_bse_surrogate/preprocess/build/bin/ )
-
-	target_link_libraries(cli ${EXTENDED_HEIGHTFIELD_LIB} )  
-endif()
-
+# Install the Python module
+install(TARGETS _preprocess_module
+        EXCLUDE_FROM_ALL
+        COMPONENT python_modules
+        DESTINATION ${PY_BUILD_CMAKE_IMPORT_NAME})

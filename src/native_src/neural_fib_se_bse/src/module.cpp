@@ -15,11 +15,17 @@ PYBIND11_MAKE_OPAQUE(std::vector<float3>);
 PYBIND11_MAKE_OPAQUE(std::vector<int2>);
 PYBIND11_MAKE_OPAQUE(std::vector<int3>);
 
-PYBIND11_MODULE(extended_heightfield, m) 
+void test_entry( void ) {
+	py::print("hello world");
+}
+
+PYBIND11_MODULE(_preprocess_module, m) 
 {
     // CUDA vector types
     PYBIND11_NUMPY_DTYPE(float2, x, y);
     PYBIND11_NUMPY_DTYPE(float3, x, y, z);
+
+	m.def("test_entry", &test_entry);
 
     // rasterizer API
     py::class_<Sphere_Intersector>(m, "Sphere_Rasterizer")
