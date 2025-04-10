@@ -27,6 +27,8 @@ message(STATUS "CMAKE_CUDA_COMPILER = ${CMAKE_CUDA_COMPILER}")
 message(STATUS "CMAKE_CUDA_COMPILER_ID = ${CMAKE_CUDA_COMPILER_ID}")
 message(STATUS "CMAKE_CUDA_COMPILER_VERSION = ${CMAKE_CUDA_COMPILER_VERSION}")
 
+set(COMPUTE_CAPABILITY "60" CACHE STRING "The CUDA compute capability that the GPU kernels should be compiled for.")
+
 # Compile the example Python module
 pybind11_add_module(_preprocess_module MODULE ${LIBRARY_SOURCES})
 set_target_properties(_preprocess_module PROPERTIES
