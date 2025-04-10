@@ -30,11 +30,11 @@ def preprocess_to_neural(extended_heightfield, normal_map):
     normal_map = normal_map.squeeze(2)
     normal_map = rf.structured_to_unstructured( normal_map );
 
-    normal_map = ( normal_map + 1.0 ) * 127.5
+    # normal_map = ( normal_map + 1.0 ) * 127.5
+    normal_map = ( normal_map + 1.0 ) / 2.0
     
     normal_map = np.transpose(normal_map, (2,1,0) )
     normal_map = np.expand_dims(normal_map, 0)
-    normal_map = ( normal_map + 1.0 ) / 2.0    
     normal_map = torch.from_numpy( normal_map )   
     
     return extended_heightfield,normal_map    

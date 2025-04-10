@@ -1,11 +1,10 @@
 dependencies = ['torch']
-from simulator import *
 
 def fib_se_bse( weights=None **kwargs ):
     """ # FIB SE BSE Model
     default weights are Resnet 152 backbone and exthf-normal datalayout
     """
-    model = new FIBModel(**kwargs)
+    model = new FIBModel( (output_size,output_size), **kwargs)
     
     if pretrained:
         # For checkpoint saved in local GitHub repo, e.g. 
