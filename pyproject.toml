@@ -28,3 +28,6 @@ install_components = ["python_modules", "python_stubs"]
 
 [tool.py-build-cmake.stubgen] # Whether and how to generate typed stub files
 args = ["-v"]
+
+[tool.py-build-cmake.editable]
+mode = "symlink"

@@ -27,3 +27,6 @@ If you use our package, please cite this paper:
     publisher = {CFV}
 }
 ```
+
+## Dependencies
+The system uses py-build-cmake to build the python packages.

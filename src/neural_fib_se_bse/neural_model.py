@@ -1,6 +1,6 @@
 from fastai.vision.all import * 
 
-def create_inner_model( dataloader, backbone, img_size, datalayout, **kwargs ):
+def create_inner_model( backbone, img_size, datalayout, **kwargs ):
     if datalayout == "exthf_normal" or datalayout == "normal_exthf":
         n_in=7
     if datalayout == "exthf_only" or datalayout == "hf_normal":
@@ -11,7 +11,7 @@ def create_inner_model( dataloader, backbone, img_size, datalayout, **kwargs ):
     model = create_unet_model(backbone, 2, img_size, n_in=n_in, **kwargs)
     return model
 
-class FIBModel(torch.nn.Module):
+class NeuralModel(torch.nn.Module):
     def __init__(self, img_size, backbone_name = "resnet101", datalayout = "normal_exthf"):
         super().__init__()
         self.datalayout = datalayout
@@ -24,19 +24,20 @@ class FIBModel(torch.nn.Module):
             self.backbone = resnet50
         elif backbone_name == "resnet34":
             self.backbone = resnet34
-        self.inner_model = create_inner_model( backbone, img_size, datalayout )
+        self.inner_model = create_inner_model( self.backbone, img_size, self.datalayout )
         
-    def forward(self, x_hf_0, x_hf_1, x_hf_2, x_hf_3, x_normal):
+    def forward(self, x_hf, x_normal):
         if self.datalayout == "normal_exthf":
-            x = torch.cat( (x_normal, x_hf_0, x_hf_1, x_hf_2, x_hf_3 ), dim=1 )
+            x = torch.cat( (x_normal, x_hf ), dim=1 )
         elif self.datalayout == "exthf_normal":
-            x = torch.cat( (x_hf_0, x_hf_1, x_hf_2, x_hf_3, x_normal ), dim=1 )
+            x = torch.cat( (x_hf, x_normal ), dim=1 )
         elif self.datalayout == "exthf_only":
-            x = torch.cat( (x_hf_0, x_hf_1, x_hf_2, x_hf_3 ), dim=1 )
+            x = x_hf
         elif self.datalayout == "hf_normal":
-            x = torch.cat( (x_hf_0, x_normal ), dim=1 )
+            x = x_normal
         elif self.datalayout == "hf_only":
-            x = x_hf_0
+            x = x_hf[0]
+            x = x.unsqueeze( 0 )
         output_of_inner_model = self.inner_model(x)
         output = torch.split(output_of_inner_model, 1, dim=1)
         return output
