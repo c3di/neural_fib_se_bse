@@ -21,7 +21,7 @@ class Sphere_Intersector;
 class Cylinder_Intersector;
 class CSG_Resolver;
 
-#ifdef extended_heightfield_EXPORTS
+#ifdef _PREPROCESS_MODULE_EXPORTS
 #define LIBRARY_API __declspec(dllexport)
 #else
 #define LIBRARY_API __declspec(dllimport)

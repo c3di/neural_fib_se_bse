@@ -37,6 +37,7 @@ target_compile_definitions(_preprocess_module PRIVATE
     MODULE_NAME=$<TARGET_FILE_BASE_NAME:_preprocess_module>
     VERSION_INFO="${PY_FULL_VERSION}"
 )
+target_compile_definitions(_preprocess_module PUBLIC -D_PREPROCESS_MODULE_EXPORTS)
 
 set(PREPROCESS_MODULE_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/neural_fib_se_bse/include")
 include_directories(${PREPROCESS_MODULE_INCLUDE_DIR})
