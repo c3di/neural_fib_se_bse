@@ -6,7 +6,7 @@ authors = [
 requires-python = ">=3.12"
 readme = "README.md"
 license = { "file" = "LICENSE" }
-dependencies = ["numpy", "fastai"]
+dependencies = ["numpy", "fastai", "tifffile", "scipy", "configparser", "sys", "os"]
 dynamic = ["version", "description"]
 
 [build-system] # How pip and other frontends should build this project
