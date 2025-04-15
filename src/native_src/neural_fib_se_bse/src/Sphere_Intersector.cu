@@ -31,6 +31,9 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 
 	int pixel_index = idy * output_resolution.x + idx;
 
+	// initialize z_buffer
+	z_buffer[pixel_index] = empty;
+
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
@@ -78,7 +81,7 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 			cut_case = true;
 		}
 
-		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( entry - image_plane_z, exit - image_plane_z);
+		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( entry - image_plane_z, exit - image_plane_z );
 		hit_index++;
 
 		// write the normal map
