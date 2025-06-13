@@ -24,12 +24,12 @@ class SE_BSE_Simulator():
         return self.prediction_to_cpu( prediction )
         
     def prediction_to_cpu( self, prediction ):
-        se,bse = prediction
-        se = se.detach().numpy()
-        se = se.squeeze(0).squeeze(0)
+        bse,se = prediction
         bse = bse.detach().numpy()
         bse = bse.squeeze(0).squeeze(0)
-        return se, bse
+        se = se.detach().numpy()
+        se = se.squeeze(0).squeeze(0)
+        return bse, se
         
     def add_statistical_geometry( self, geometry_model ):
         geometry_model.generate()

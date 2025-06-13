@@ -48,7 +48,7 @@ geometry_model = neural_fib_se_bse.CBooleanModel(image_size = np.array([resoluti
                                                  volume_density = 0.5,
                                                  particle_shape = 'Cuboid')
 simulator.add_statistical_geometry( geometry_model )
-se,bse = simulator.create_image()
+bse,se = simulator.create_image()
 
 figure, axis = plt.subplots( ncols=2, figsize=(32,16))
 

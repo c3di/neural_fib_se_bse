@@ -53,7 +53,7 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 # Install the Python module
-install(TARGETS _preprocess_module
-        EXCLUDE_FROM_ALL
-        COMPONENT python_modules
-        DESTINATION ${PY_BUILD_CMAKE_IMPORT_NAME})
+#install(TARGETS _preprocess_module
+#        EXCLUDE_FROM_ALL
+#        COMPONENT python_modules
+#        DESTINATION ${PY_BUILD_CMAKE_IMPORT_NAME})
