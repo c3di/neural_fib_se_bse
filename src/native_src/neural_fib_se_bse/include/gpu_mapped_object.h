@@ -19,6 +19,8 @@ public:
 
 	virtual ~GPUMappedObject<DTYPE>();
 
+	void set_mem_to_initial_value(int3 dimensions, DTYPE init_value);
+
 	void push_on_gpu();
 	void pull_from_gpu();
 

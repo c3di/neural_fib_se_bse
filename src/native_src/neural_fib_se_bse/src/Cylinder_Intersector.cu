@@ -61,9 +61,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 	int pixel_index = idy * output_resolution.x + idx;
 
-	// initialize z_buffer
-	z_buffer[pixel_index] = empty;
-
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
@@ -202,8 +199,8 @@ Cylinder_Intersector::Cylinder_Intersector(std::tuple<int, int> output_resolutio
 {
 }
 
-Cylinder_Intersector::Cylinder_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: Abstract_Intersector<Cylinder>(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
+Cylinder_Intersector::Cylinder_Intersector(float2* extended_heightfield_gpu, float3* normal_map_gpu, std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+	: Abstract_Intersector<Cylinder>(extended_heightfield_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
 {
 }
 
@@ -211,12 +208,12 @@ Cylinder_Intersector::~Cylinder_Intersector()
 {
 }
 
-void Cylinder_Intersector::intersect( float image_plane )
+void Cylinder_Intersector::intersect( float image_plane, GPUMappedFloatBuffer& z_buffer )
 {
 	int2 grid_size = output_resolution;
 	dim3 block_size(16, 16);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_cylinder_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer->gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, make_int2(425, 425) );
+	rasterize_cylinder_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer.gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, make_int2(425, 425) );
 	throw_on_cuda_error();
 }
 

@@ -16,6 +16,8 @@ namespace py = pybind11;
 #include <vector>
 #include <tuple>
 
+#include "gpu_mapped_object.h"
+
 class Intersector;
 class Sphere_Intersector;
 class Cylinder_Intersector;
@@ -72,4 +74,5 @@ protected:
 	int n_hf_entries;
 	int max_buffer_length;
 	float image_plane;
+	GPUMappedFloatBuffer* z_buffer;
 };

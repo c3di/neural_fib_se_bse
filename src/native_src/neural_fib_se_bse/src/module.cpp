@@ -28,7 +28,7 @@ PYBIND11_MODULE(_preprocess_module, m)
 	m.def("test_entry", &test_entry);
 
     // rasterizer API
-    py::class_<Sphere_Intersector>(m, "Sphere_Rasterizer")
+/*     py::class_<Sphere_Intersector>(m, "Sphere_Rasterizer")
         .def(py::init<std::tuple<int, int>, int, int>())
         .def("intersect", &Sphere_Intersector::intersect_py, py::arg("image_plane"));
 
@@ -36,7 +36,7 @@ PYBIND11_MODULE(_preprocess_module, m)
         .def(py::init<std::tuple<int, int>, int, int>())
         .def("intersect", &Cylinder_Intersector::intersect_py, py::arg("image_plane"))
         .def("get_extended_height_field", &Cylinder_Intersector::get_extended_height_field_py);
-
+ */
     py::class_<HeightFieldExtractor>(m, "HeightFieldExtractor")
         .def(py::init<std::tuple<int, int>, int, int>())
         .def("extract_data_representation", &HeightFieldExtractor::extract_data_representation_py, py::arg("image_plane"))
