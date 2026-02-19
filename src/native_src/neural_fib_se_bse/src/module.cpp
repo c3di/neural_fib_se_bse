@@ -40,9 +40,10 @@ PYBIND11_MODULE(_preprocess_module, m)
     py::class_<HeightFieldExtractor>(m, "HeightFieldExtractor")
         .def(py::init<std::tuple<int, int>, int, int>())
         .def("extract_data_representation", &HeightFieldExtractor::extract_data_representation_py, py::arg("image_plane"))
-        .def("add_spheres",   &HeightFieldExtractor::add_spheres_py,   py::arg("spheres"))
+        .def("add_spheres", &HeightFieldExtractor::add_spheres_py, py::arg("spheres"))
         .def("add_cylinders", &HeightFieldExtractor::add_cylinders_py, py::arg("cylinders"))
-        .def("add_cuboids",   &HeightFieldExtractor::add_cuboids_py, py::arg("cuboids"));
+        .def("add_cuboids", &HeightFieldExtractor::add_cuboids_py, py::arg("cuboids"))
+        .def("add_volume", &HeightFieldExtractor::add_volume_py, py::arg("volume data"), py::arg("volume size x"), py::arg("volume size y"), py::arg("volume size z"));
 
     py::class_<CSG_Resolver>(m, "CSG_Resolver")
         .def(py::init<py::array&, int>())

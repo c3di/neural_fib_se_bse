@@ -2,6 +2,7 @@
 #include "Sphere_Intersector.h"
 #include "Cylinder_Intersector.h"
 #include "Cuboid_Intersector.h"
+#include "Volume_Intersector.h"
 #include "CSG_Resolver.h"
 
 #include "cuda_utils.h"
@@ -99,6 +100,14 @@ void HeightFieldExtractor::add_cuboids(std::vector<Cuboid>& cuboids)
 	method->add_primitives(cuboids);
 	intersectors.push_back(method);
 }
+
+
+void HeightFieldExtractor::add_volume_py(py::array& volume_data, int size_x, int size_y, int size_z) {
+	auto method = new Volume_Intersector(std::tuple<int,int,int>(size_x, size_y, size_z), extended_heightfield_gpu, normal_map_gpu, n_hf_entries, max_buffer_length);
+	method->add_volume_py(volume_data);
+	intersectors.push_back(method);
+}
+
 
 std::tuple<float2*, float3*> HeightFieldExtractor::extract_data_representation(float image_plane)
 {

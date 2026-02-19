@@ -38,6 +38,9 @@ Abstract_Intersector<Primitive>::~Abstract_Intersector()
 {
 	delete(extended_heightfield);
 	delete(normal_map);
+	if (primitives_gpu) {
+		cudaFree(this->primitives_gpu);
+	}
 }
 
 

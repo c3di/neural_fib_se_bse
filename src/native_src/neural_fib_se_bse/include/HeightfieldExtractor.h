@@ -50,6 +50,8 @@ public:
 	void add_cuboids_py(py::array& cuboids);
 	void add_cuboids(std::vector<Cuboid>& cuboids);
 
+	void add_volume_py(py::array& volume_data, int size_x, int size_y, int size_z);
+
 	std::tuple< float2*, float3* > extract_data_representation(float image_plane);
 	std::tuple< py::array_t<float>, py::array_t<float3>> extract_data_representation_py(float image_plane);
 	void intersect(float image_plane );
