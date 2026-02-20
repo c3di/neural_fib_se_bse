@@ -35,10 +35,10 @@ __global__ void intersect_volume_kernel(cudaTextureObject_t volume_texture, floa
 	const float pixel_y = (float) idy;
 
 	// ray for intersection
-	float3 ray_origin = make_float3(0.0f, 0.0f, 0.0f); // Starting outside the volume if there is already a shape at 0,0,0
+	float3 ray_origin = make_float3(0.0f, 0.0f, 0.0f);
 	float3 ray_direction = make_float3(0.0f, 0.0f, 1.0f); // moving only in z direction
 	float voxel_z = 0;
-	float3 normalized_pos = make_float3(pixel_x / volume_size.x, pixel_y / volume_size.y, 0.0f); // u,v,w are accessed using x,y,z
+	float3 normalized_pos = make_float3(pixel_x / volume_size.x, pixel_y / volume_size.y, 0.0f); // use order z,y,x to access texture data
 
 	float t = 0.0f;
 	float t_max = 1.0f;
@@ -52,7 +52,7 @@ __global__ void intersect_volume_kernel(cudaTextureObject_t volume_texture, floa
 		normalized_pos.z = ray_origin.z + t * ray_direction.z;
 
 
-		float density = tex3D<float>(volume_texture, normalized_pos.x, normalized_pos.y, normalized_pos.z);
+		float density = tex3D<float>(volume_texture, normalized_pos.z, normalized_pos.y, normalized_pos.x);
 
 		if (density > density_threshold) {
 
@@ -86,16 +86,15 @@ __global__ void intersect_volume_kernel(cudaTextureObject_t volume_texture, floa
 //------------ CPP Code -----------------------//
 
 
-Volume_Intersector::Volume_Intersector(std::tuple<int, int, int> volume_size,
+Volume_Intersector::Volume_Intersector(std::tuple<int, int, int> volume_size_,
 										float2* extended_heightfield_gpu,
 										float3* normal_map_gpu, 
 										int n_hf_entries, 
 										int max_buffer_length) 
-	: volume_size(as_int3(volume_size)), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length){
+	: volume_size(as_int3(volume_size_)), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length) {
 	this->size_of_volume = this->volume_size.x * this->volume_size.y * this->volume_size.z;
 	this->volume_data_cpu.resize(this->size_of_volume);
 	this->volume_data_gpu = nullptr;
-
 	extended_heightfield = new GPUMappedFloat2Buffer(make_int3(this->volume_size.x, this->volume_size.y, buffer_length), extended_heightfield_gpu);
 	normal_map = new GPUMappedFloat3Buffer(make_int3(this->volume_size.x, this->volume_size.y, 1), normal_map_gpu);
 };
@@ -124,10 +123,10 @@ void Volume_Intersector::allocate_volume_data_cpu(py::array& data)
 		throw std::invalid_argument("data array is expected to be of three dimensions, found " + std::to_string(info.ndim));
 	}
 	if (info.shape[0] != this->volume_size.x) {
-		throw std::invalid_argument("data array is expected to be of dimensions ny: " + std::to_string(this->volume_size.x) + ", found x: " + std::to_string(info.shape[0]));
+		throw std::invalid_argument("data array is expected to be of dimensions nx: " + std::to_string(this->volume_size.x) + ", found x: " + std::to_string(info.shape[0]));
 	}
 	if (info.shape[1] != this->volume_size.y) {
-		throw std::invalid_argument("data array is expected to be of dimensions nx: " + std::to_string(this->volume_size.y) + ", found y: " + std::to_string(info.shape[1]));
+		throw std::invalid_argument("data array is expected to be of dimensions ny: " + std::to_string(this->volume_size.y) + ", found y: " + std::to_string(info.shape[1]));
 	}
 	if (info.shape[2] != this->volume_size.z) {
 		throw std::invalid_argument("data array is expected to be of dimensions nz: " + std::to_string(this->volume_size.z) + ", found z: " + std::to_string(info.shape[2]));
@@ -158,7 +157,7 @@ float* Volume_Intersector::allocate_volume_data_gpu(const std::vector<float>& vo
 }
 
 void Volume_Intersector::allocate_volume_data_gpu_texture(const std::vector<float>& volume_data_cpu) {
-	cudaExtent volume_size = make_cudaExtent(this->volume_size.x, this->volume_size.y, this->volume_size.z);
+	cudaExtent volume_size = make_cudaExtent(this->volume_size.z, this->volume_size.y, this->volume_size.x);
 
 	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float>();
 
@@ -177,9 +176,13 @@ void Volume_Intersector::allocate_volume_data_gpu_texture(const std::vector<floa
 
 inline cudaMemcpy3DParms Volume_Intersector::create_copy_params_struct(const cudaExtent volume_size) {
 	cudaMemcpy3DParms copy_params = { 0 };
-	copy_params.srcPtr = make_cudaPitchedPtr((void*)volume_data_cpu.data(), this->volume_size.x * sizeof(float), this->volume_size.x, this->volume_size.y);
+	copy_params.srcPtr = make_cudaPitchedPtr((void*)volume_data_cpu.data(), this->volume_size.z * sizeof(float), this->volume_size.z, this->volume_size.y);
 	copy_params.dstArray = this->volume_array_gpu;
-	copy_params.extent = volume_size;
+	copy_params.extent = make_cudaExtent(
+		this->volume_size.z,
+		this->volume_size.y,
+		this->volume_size.x
+	);
 	copy_params.kind = cudaMemcpyHostToDevice;
 
 	return copy_params;

@@ -8,7 +8,7 @@
 class Volume_Intersector : public Intersector {
 
 public:
-	Volume_Intersector(std::tuple<int, int, int> volume_size, float2* extended_heightfield_gpu,float3* normal_map_gpu, int n_hf_entries, int max_buffer_length = 64);
+	Volume_Intersector(std::tuple<int, int, int> volume_size_, float2* extended_heightfield_gpu,float3* normal_map_gpu, int n_hf_entries, int max_buffer_length = 64);
 	~Volume_Intersector();
 
 	void allocate_volume_data_cpu(py::array& data);
