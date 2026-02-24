@@ -102,8 +102,8 @@ void HeightFieldExtractor::add_cuboids(std::vector<Cuboid>& cuboids)
 }
 
 
-void HeightFieldExtractor::add_volume_py(py::array& volume_data, std::tuple<int, int, int> volume_size) {
-	auto method = new Volume_Intersector(volume_size, extended_heightfield_gpu, normal_map_gpu, n_hf_entries, max_buffer_length);
+void HeightFieldExtractor::add_volume_py(py::array& volume_data, std::tuple<int, int, int> volume_size, float threshold) {
+	auto method = new Volume_Intersector(volume_size, threshold, extended_heightfield_gpu, normal_map_gpu, n_hf_entries, max_buffer_length);
 	method->add_volume_py(volume_data);
 	intersectors.push_back(method);
 }
