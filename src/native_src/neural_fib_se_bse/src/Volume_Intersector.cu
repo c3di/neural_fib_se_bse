@@ -258,7 +258,6 @@ __global__ void intersect_volume_kernel_single_loop(cudaTextureObject_t volume_t
 						
 			// Normal map
 			if (!n_map_written) {
-				printf("Hit surface at x: %d, y: %d\n", idx, idy);
 				float alpha = (density_threshold - previous_density) / (density - previous_density);
 
 				float surface = previous_z + alpha * step;
