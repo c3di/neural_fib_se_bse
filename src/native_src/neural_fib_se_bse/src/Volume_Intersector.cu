@@ -20,11 +20,6 @@ __global__ void intersect_volume_kernel(cudaTextureObject_t volume_texture, floa
 
 	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
 	{
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-		{
-			float2 value = extended_heightfield[pixel_index * buffer_length + hit_index];
-			printf("  hit index %i %.2f %.2f\n", hit_index, value.x, value.y);
-		}
 		hit_index++;
 		if (hit_index >= buffer_length)
 			return;
@@ -93,7 +88,6 @@ __global__ void intersect_volume_kernel(cudaTextureObject_t volume_texture, floa
 
 		//if (previous_density < density && density > density_threshold) {
 		if((previous_density - density_threshold) * (density - density_threshold) < 0.0f){
-			printf("Hit surface at x: %d, y: %d\n", idx, idy);
 			float alpha = (density_threshold - previous_density) / (density - previous_density);
 
 			float surface = previous_z + alpha * step;
@@ -131,7 +125,6 @@ __global__ void intersect_volume_kernel(cudaTextureObject_t volume_texture, floa
 					z_buffer[pixel_index] = surface;
 					
 					normal_map[pixel_index] = make_float3(grad.x , grad.y, grad.z );
-					//normal_map[pixel_index] = make_float3((-grad.x * 0.5f + 0.5f) * 255.0f, (-grad.y * 0.5f + 0.5f) * 255.0f, (-grad.z * 0.5f + 0.5f) * 255.0f);
 				}
 
 			}
@@ -494,8 +487,9 @@ Volume_Intersector::Volume_Intersector(std::tuple<int, int, int> volume_size_,
 										float2* extended_heightfield_gpu,
 										float3* normal_map_gpu, 
 										int n_hf_entries, 
-										int max_buffer_length) 
-	: volume_size(as_int3(volume_size_)),threshold_value(threshold), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length) {
+										int max_buffer_length,
+										Implementation impl) 
+	: volume_size(as_int3(volume_size_)),threshold_value(threshold), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length), impl(impl){
 	this->size_of_volume = this->volume_size.x * this->volume_size.y * this->volume_size.z;
 	this->volume_data_cpu.resize(this->size_of_volume);
 	this->volume_data_gpu = nullptr;
@@ -628,15 +622,179 @@ void Volume_Intersector::add_volume_py(py::array& data) {
 
 
 void Volume_Intersector::intersect(float image_plane, GPUMappedFloatBuffer& z_buffer) {
-	int2 grid_size = make_int2(this->volume_size.x, this->volume_size.y);
-	dim3 block_size(32, 8);
-	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	//intersect_volume_kernel_single_loop << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane, false, make_int2(425, 425) );
-	get_height_field_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane);
+	int minGridSize;
+	int blockSize;
 
-	//get_first_z_hit_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, z_buffer.gpu_ptr(), this->volume_size, image_plane);
-	//get_normal_map_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size);
-	get_normal_map_single_kernel_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, image_plane);
+	int blockX;
+	int blockY;
+
+	dim3 block_size;
+
+	dim3 num_blocks;
+		
+	//int2 grid_size = make_int2(this->volume_size.x, this->volume_size.y);
+	//dim3 block_size(32, 8);
+	//dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
+	switch (this->impl) {
+	case 0:
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			intersect_volume_kernel_single_loop,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+		throw_on_cuda_error();
+		printf("Running implementation 0 with num_blocks: (%u, %u), block_size: (%u, %u)\n",
+			num_blocks.x, num_blocks.y,
+			block_size.x, block_size.y);
+		intersect_volume_kernel_single_loop << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane, false, make_int2(425, 425) );
+		break;
+	case 1:
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			get_height_field_marching_volume_kernel,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+		get_height_field_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane);
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			get_first_z_hit_marching_volume_kernel,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+		get_first_z_hit_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, z_buffer.gpu_ptr(), this->volume_size, image_plane);
+
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			get_normal_map_marching_volume_kernel,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+		get_normal_map_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size);
+		break;
+	case 2: 
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			get_height_field_marching_volume_kernel,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+
+		get_height_field_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane);
+		
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			get_normal_map_single_kernel_marching_volume_kernel,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+	
+		get_normal_map_single_kernel_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, image_plane);
+		break;
+	default: 
+
+		cudaOccupancyMaxPotentialBlockSize(
+			&minGridSize,
+			&blockSize,
+			intersect_volume_kernel,
+			0,
+			0
+		);
+
+		blockX = 32;
+		blockY = blockSize / 32;
+
+		if (blockY == 0) blockY = 1;
+
+		block_size = dim3(blockX, blockY);
+
+		num_blocks = dim3(
+			(volume_size.x + block_size.x - 1) / block_size.x,
+			(volume_size.y + block_size.y - 1) / block_size.y
+		);
+
+		intersect_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane, false, make_int2(425, 425) );
+		break;
+	}
 
 
 	throw_on_cuda_error();

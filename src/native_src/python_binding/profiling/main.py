@@ -11,7 +11,7 @@ def main():
     preprocessor = HeightFieldExtractor((RESOLUTION_Y, RESOLUTION_X), 2, 256)
 
     preprocessor.add_volume(
-        volume.container, (RESOLUTION_X, RESOLUTION_Y, RESOLUTION_Z), 0.0625
+        volume.container, (RESOLUTION_X, RESOLUTION_Y, RESOLUTION_Z), 0.0625, 0
     )
 
     extended_heightfield, normal_map = preprocessor.extract_data_representation(0.0)

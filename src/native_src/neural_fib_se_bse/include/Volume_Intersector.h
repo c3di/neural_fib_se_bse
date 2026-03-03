@@ -4,12 +4,17 @@
 #include "cuda_utils.h"
 #include "cuda_matrix.h"
 #include <iostream>
-
+enum Implementation {
+	SINGLE,
+	MULTI,
+	MULTI_FUSION,
+	FIRST_KERNEL,
+};
 
 class Volume_Intersector : public Intersector {
 
 public:
-	Volume_Intersector(std::tuple<int, int, int> volume_size_,float threshold, float2* extended_heightfield_gpu,float3* normal_map_gpu, int n_hf_entries, int max_buffer_length = 64);
+	Volume_Intersector(std::tuple<int, int, int> volume_size_, float threshold, float2* extended_heightfield_gpu, float3* normal_map_gpu, int n_hf_entries, int max_buffer_length = 64, Implementation impl = SINGLE);
 	~Volume_Intersector();
 
 	void allocate_volume_data_cpu(py::array& data);
@@ -42,7 +47,7 @@ private:
 
 	GPUMappedFloat2Buffer* extended_heightfield;
 	GPUMappedFloat3Buffer* normal_map;
-
+	Implementation impl = SINGLE;
 	int n_hf_entries;
 	int buffer_length = 64;
 
