@@ -55,6 +55,9 @@ __host__ T* allocate_buffer_on_gpu(int3 buffer_size, T init_value)
 	return buffer;
 }
 
+
+
+
 template float*  allocate_buffer_on_gpu<float >(int3 buffer_size);
 template float* allocate_buffer_on_gpu<float >(int3 buffer_size, float);
 

@@ -757,7 +757,8 @@ void Volume_Intersector::intersect(float image_plane, GPUMappedFloatBuffer& z_bu
 		);
 
 		blockX = 32;
-		blockY = blockSize / 32;
+		//blockY = blockSize / 32;
+		blockY = 8;
 
 		if (blockY == 0) blockY = 1;
 
@@ -771,7 +772,7 @@ void Volume_Intersector::intersect(float image_plane, GPUMappedFloatBuffer& z_bu
 		get_normal_map_single_kernel_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, image_plane);
 		break;
 	default: 
-
+		/*
 		cudaOccupancyMaxPotentialBlockSize(
 			&minGridSize,
 			&blockSize,
@@ -790,8 +791,12 @@ void Volume_Intersector::intersect(float image_plane, GPUMappedFloatBuffer& z_bu
 		num_blocks = dim3(
 			(volume_size.x + block_size.x - 1) / block_size.x,
 			(volume_size.y + block_size.y - 1) / block_size.y
-		);
+		);*/
 
+
+		auto num_blocks_and_size =  get_max_potential_block(intersect_volume_kernel, volume_size.x, volume_size.y);
+		num_blocks = std::get<0>(num_blocks_and_size);
+		block_size = std::get<1>(num_blocks_and_size);
 		intersect_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane, false, make_int2(425, 425) );
 		break;
 	}

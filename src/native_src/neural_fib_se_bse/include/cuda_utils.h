@@ -43,3 +43,29 @@ T* allocate_buffer_on_gpu(int3 buffer_size, T init_value);
 
 template<typename T>
 void call_mem_set_kernel(T* buffer, int3 buffer_size, T init_value);
+
+template<typename T>
+inline std::tuple<dim3, dim3> get_max_potential_block(T kernel, int size_x, int size_y) {
+	int min_grid_size = 0;
+	int block_size_one_dim = 0;
+	cudaOccupancyMaxPotentialBlockSize(
+			&min_grid_size,
+			&block_size_one_dim,
+			kernel,
+			0,
+			0
+		);
+	int block_x = 32;
+	int block_y = block_size_one_dim / block_x;
+
+	if (block_y == 0) block_y = 1;
+
+	dim3 block_size = dim3(block_x, block_y);
+
+	dim3 num_blocks = dim3(
+		(size_x + block_size.x - 1) / block_size.x,
+		(size_y + block_size.y - 1) / block_size.y
+	);
+
+	return std::make_tuple(num_blocks, block_size);
+}
