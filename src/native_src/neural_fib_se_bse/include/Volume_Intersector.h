@@ -19,7 +19,7 @@ public:
 
 	void allocate_volume_data_cpu(py::array& data);
 	float* allocate_volume_data_gpu(const std::vector<float>& volume_data_cpu);
-	void allocate_volume_data_gpu_texture(const std::vector<float>& volume_data_cpu);
+	void allocate_volume_data_gpu_texture(py::array& volume_data);
 	void add_volume_py(py::array& data);
 	virtual void intersect(float image_plane, GPUMappedFloatBuffer& z_buffer) override;
 
@@ -33,13 +33,12 @@ public:
 private:
 
 	inline int get_volume_index(int x, int y, int z);
-	inline cudaMemcpy3DParms create_copy_params_struct(const cudaExtent volume_size);
+	inline cudaMemcpy3DParms create_copy_params_struct(float* volume_data, const cudaExtent volume_size);
 	inline cudaResourceDesc create_resource_descriptor();
 	inline cudaTextureDesc create_texture_descriptor();
 	int3 volume_size;
 	int size_of_volume;
 	float threshold_value = 0.125;
-	std::vector<float> volume_data_cpu;
 	float* volume_data_gpu;
 	cudaArray* volume_array_gpu = nullptr;
 	cudaTextureObject_t volume_data_gpu_tex = 0;

@@ -491,7 +491,6 @@ Volume_Intersector::Volume_Intersector(std::tuple<int, int, int> volume_size_,
 										Implementation impl) 
 	: volume_size(as_int3(volume_size_)),threshold_value(threshold), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length), impl(impl){
 	this->size_of_volume = this->volume_size.x * this->volume_size.y * this->volume_size.z;
-	this->volume_data_cpu.resize(this->size_of_volume);
 	this->volume_data_gpu = nullptr;
 	extended_heightfield = new GPUMappedFloat2Buffer(make_int3(this->volume_size.x, this->volume_size.y, buffer_length), extended_heightfield_gpu);
 	normal_map = new GPUMappedFloat3Buffer(make_int3(this->volume_size.y, this->volume_size.x, 1), normal_map_gpu);
@@ -518,11 +517,14 @@ Volume_Intersector::~Volume_Intersector() {
 	}
 }
 
+inline int Volume_Intersector::get_volume_index(int x, int y, int z) {
+	return x * (volume_size.y * volume_size.z)
+		+ y * volume_size.z
+		+ z;
+};
 
-
-void Volume_Intersector::allocate_volume_data_cpu(py::array& data)
-{
-	py::buffer_info info = data.request();
+void Volume_Intersector::allocate_volume_data_gpu_texture(py::array& volume_data) {
+	py::buffer_info info = volume_data.request();
 	if (info.ndim != 3) {
 		throw std::invalid_argument("data array is expected to be of three dimensions, found " + std::to_string(info.ndim));
 	}
@@ -539,35 +541,17 @@ void Volume_Intersector::allocate_volume_data_cpu(py::array& data)
 	if (info.format != "f") {
 		throw std::invalid_argument("data array is expected to be of dtype float32, found " + info.format);
 	}
-	float* ptr = (float*) info.ptr;
-	std::memcpy(volume_data_cpu.data(), info.ptr, this->size_of_volume * sizeof(float));
 
-}
+	float* ptr = (float*)info.ptr;
+	//std::memcpy(volume_data_cpu.data(), info.ptr, this->size_of_volume * sizeof(float));
 
-
-inline int Volume_Intersector::get_volume_index(int x, int y, int z) {
-	return x * (volume_size.y * volume_size.z)
-		+ y * volume_size.z
-		+ z;
-};
-
-
-float* Volume_Intersector::allocate_volume_data_gpu(const std::vector<float>& volume_data_cpu)
-{
-	float* ptr_gpu;
-	cudaMalloc((void**)&ptr_gpu, sizeof(float) * this->size_of_volume);
-	cudaMemcpy(ptr_gpu, &this->volume_data_cpu[0], sizeof(float) * this->size_of_volume, cudaMemcpyHostToDevice);
-	return ptr_gpu;
-}
-
-void Volume_Intersector::allocate_volume_data_gpu_texture(const std::vector<float>& volume_data_cpu) {
 	cudaExtent volume_size = make_cudaExtent(this->volume_size.z, this->volume_size.y, this->volume_size.x);
 
 	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float>();
 
 	cudaMalloc3DArray(&this->volume_array_gpu, &channel_desc, volume_size);
 
-	cudaMemcpy3DParms copy_params = create_copy_params_struct(volume_size);
+	cudaMemcpy3DParms copy_params = create_copy_params_struct(ptr, volume_size);
 	cudaMemcpy3D(&copy_params);
 
 	cudaResourceDesc res_desc = create_resource_descriptor();
@@ -578,9 +562,9 @@ void Volume_Intersector::allocate_volume_data_gpu_texture(const std::vector<floa
 }
 
 
-inline cudaMemcpy3DParms Volume_Intersector::create_copy_params_struct(const cudaExtent volume_size) {
+inline cudaMemcpy3DParms Volume_Intersector::create_copy_params_struct(float* volume_data, const cudaExtent volume_size) {
 	cudaMemcpy3DParms copy_params = { 0 };
-	copy_params.srcPtr = make_cudaPitchedPtr((void*)volume_data_cpu.data(), this->volume_size.z * sizeof(float), this->volume_size.z, this->volume_size.y);
+	copy_params.srcPtr = make_cudaPitchedPtr((void*)volume_data, this->volume_size.z * sizeof(float), this->volume_size.z, this->volume_size.y);
 	copy_params.dstArray = this->volume_array_gpu;
 	copy_params.extent = make_cudaExtent(
 		this->volume_size.z,
@@ -615,8 +599,8 @@ inline cudaTextureDesc Volume_Intersector::create_texture_descriptor() {
 };
 
 void Volume_Intersector::add_volume_py(py::array& data) {
-	this->allocate_volume_data_cpu(data);
-	this->allocate_volume_data_gpu_texture(this->volume_data_cpu);
+	//this->allocate_volume_data_cpu(data);
+	this->allocate_volume_data_gpu_texture(data);
 	//this->volume_data_gpu = this->allocate_volume_data_gpu(this->volume_data_cpu);
 }
 
