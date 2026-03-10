@@ -4,11 +4,12 @@
 
 struct Cylinder
 {
-	static const size_t N_FLOAT_PARAMS = 9;
-	float3 position;
 	float4 orientation;
+	float3 position;
 	float r, l;
 	float3 aabb;
+	static const size_t N_FLOAT_PARAMS = 9;
+
 	inline bool operator()(const Cylinder& a, const Cylinder& b) const { return a.position.z + a.r < b.position.z + b.r; }
 	inline Cylinder& operator=( float* data ) 
 	{ 

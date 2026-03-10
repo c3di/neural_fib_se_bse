@@ -69,14 +69,10 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
 		hit_index++;
 
-	if (debug && idx == debug_position.x && idy == debug_position.y)
-		printf("starting insertion at hit index %i\n", hit_index);
 
 	// loop over all spheres
 	for (int primitive_id = 0; primitive_id < n_primitives; primitive_id++)
 	{
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("  primitive ID %i\n", primitive_id);
 		const Cylinder& cylinder = primitives[primitive_id];
 
 		if ((pixel_x < cylinder.position.x - cylinder.aabb.x) || (pixel_x > cylinder.position.x + cylinder.aabb.x)
@@ -84,8 +80,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 		 || (image_plane_z > cylinder.position.z + cylinder.aabb.z))
 			continue;
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("  aabb test passed\n");
 
 		float3 ray_origin    = make_float3(pixel_x-cylinder.position.x, pixel_y - cylinder.position.y, image_plane_z - cylinder.position.z);
 		float3 ray_direction = make_float3(0.0f,                        0.0f,                          1.0f);
@@ -165,8 +159,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			cut_case = true;
 		}
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("  hit at %.2f %.2f\n", t0, t1 );
 
 		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( t0, t1 );
 		hit_index++;

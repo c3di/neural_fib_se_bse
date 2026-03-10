@@ -19,8 +19,6 @@ public:
 	virtual float3* get_normal_map() override;
 	virtual py::array_t<float> get_extended_height_field_py() override;
 
-
-
 private:
 
 	void allocate_volume_data_gpu_texture(py::array& volume_data);
@@ -29,14 +27,12 @@ private:
 	inline cudaTextureDesc create_texture_descriptor();
 	int3 volume_size;
 	int size_of_volume;
-	float threshold_value = 0.125;
 	cudaArray* volume_array_gpu = nullptr;
 	cudaTextureObject_t volume_data_gpu_tex = 0;
-
 
 	GPUMappedFloat2Buffer* extended_heightfield;
 	GPUMappedFloat3Buffer* normal_map;
 	int n_hf_entries;
 	int buffer_length = 64;
-
+	float threshold_value = 0.125;
 };

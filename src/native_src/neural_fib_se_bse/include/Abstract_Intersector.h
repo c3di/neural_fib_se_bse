@@ -49,7 +49,6 @@ protected:
 protected:
 	std::vector<Primitive> primitives_cpu;
 	Primitive* primitives_gpu;
-	int n_primitives;
 
 	GPUMappedFloat2Buffer* extended_heightfield;
 	GPUMappedFloat3Buffer* normal_map;
@@ -57,5 +56,6 @@ protected:
 	int2 output_resolution;
 	int n_hf_entries;
 	int buffer_length;
+	int n_primitives;
 	float image_plane;
 };
