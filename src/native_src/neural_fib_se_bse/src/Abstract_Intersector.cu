@@ -19,7 +19,7 @@ Abstract_Intersector<Primitive>::Abstract_Intersector( std::tuple<int, int> outp
 	, n_hf_entries(n_hf_entries)
 	, buffer_length(buffer_length)
 {
-	extended_heightfield = new GPUMappedFloat2Buffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length), empty_interval );
+	extended_heightfield = new GPUMappedFloat2Buffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), buffer_length), EMPTY_INTERVAL );
 	normal_map = new GPUMappedFloat3Buffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1) );
 }
 
@@ -41,6 +41,11 @@ Abstract_Intersector<Primitive>::~Abstract_Intersector()
 	if (primitives_gpu) {
 		cudaFree(this->primitives_gpu);
 	}
+	if (screen_grid) {
+		free_screen_grid(*screen_grid);
+		delete screen_grid;
+		screen_grid = nullptr;
+	}
 }
 
 
@@ -51,6 +56,11 @@ void Abstract_Intersector<Primitive>::add_primitives(std::vector<Primitive>& pri
 	n_primitives = (int)primitives.size();
 	presort_primitives();
 	primitives_gpu = allocate_primitives_on_gpu(primitives_cpu);
+	if (screen_grid) {
+		free_screen_grid(*screen_grid);
+		delete(screen_grid);
+	}
+	screen_grid = new ScreenGrid(build_screen_grid_cpu(primitives_cpu, output_resolution, 32));
 }
 
 template<class Primitive>
@@ -59,6 +69,12 @@ void Abstract_Intersector<Primitive>::add_primitives_py(py::array& primitives)
 	allocate_primitives_cpu(primitives);
 	presort_primitives();
 	primitives_gpu = allocate_primitives_on_gpu(primitives_cpu);
+	if (screen_grid) {
+		free_screen_grid(*screen_grid);
+		delete(screen_grid);
+	}
+	screen_grid = new ScreenGrid(build_screen_grid_cpu(primitives_cpu, output_resolution, 32));
+
 }
 
 template<class Primitive>

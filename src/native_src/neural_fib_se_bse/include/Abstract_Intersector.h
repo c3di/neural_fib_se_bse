@@ -5,7 +5,7 @@
 
 #include "python_utils.h"
 #include "gpu_mapped_object.h"
-
+#include "ScreenGrid.h"
 #include <vector>
 #include <tuple>
 
@@ -58,4 +58,5 @@ protected:
 	int buffer_length;
 	int n_primitives;
 	float image_plane;
+	ScreenGrid* screen_grid = nullptr;
 };

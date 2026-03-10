@@ -46,7 +46,7 @@ __global__ void get_height_field_marching_volume_kernel(cudaTextureObject_t volu
 	int buffer_offset = pixel_index * buffer_length;
 
 
-	while (hit_index < buffer_length && extended_heightfield[buffer_offset + hit_index] != empty_interval)
+	while (hit_index < buffer_length && extended_heightfield[buffer_offset + hit_index] != EMPTY_INTERVAL)
 	{
 		hit_index++;
 	}
@@ -197,22 +197,38 @@ void Volume_Intersector::allocate_volume_data_gpu_texture(py::array& volume_data
 	}
 
 	float* ptr = (float*)info.ptr;
-	//std::memcpy(volume_data_cpu.data(), info.ptr, this->size_of_volume * sizeof(float));
 
 	cudaExtent volume_size = make_cudaExtent(this->volume_size.z, this->volume_size.y, this->volume_size.x);
 
 	cudaChannelFormatDesc channel_desc = cudaCreateChannelDesc<float>();
 
-	cudaMalloc3DArray(&this->volume_array_gpu, &channel_desc, volume_size);
+	cudaError_t error = cudaMalloc3DArray(&this->volume_array_gpu, &channel_desc, volume_size);
+
+	if (error != cudaSuccess) {
+		std::string msg = "Device memory allocation failed: ";
+		msg += cudaGetErrorString(error);
+		throw std::runtime_error(msg);
+	}
 
 	cudaMemcpy3DParms copy_params = create_copy_params_struct(ptr, volume_size);
-	cudaMemcpy3D(&copy_params);
+	error = cudaMemcpy3D(&copy_params);
+	if (error != cudaSuccess) {
+		std::string msg = "Memory copy host to device failed: ";
+		msg += cudaGetErrorString(error);
+		throw std::runtime_error(msg);
+	}
 
 	cudaResourceDesc res_desc = create_resource_descriptor();
 
 	cudaTextureDesc tex_desc = create_texture_descriptor();
 
-	cudaCreateTextureObject(&this->volume_data_gpu_tex, &res_desc, &tex_desc, nullptr);
+	error = cudaCreateTextureObject(&this->volume_data_gpu_tex, &res_desc, &tex_desc, nullptr);
+	if (error != cudaSuccess) {
+		std::string msg = "Creation of TextureObject failed: ";
+		msg += cudaGetErrorString(error);
+		throw std::runtime_error(msg);
+	}
+
 }
 
 

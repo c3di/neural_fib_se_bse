@@ -4,8 +4,8 @@
 #include <cuda_runtime.h>
 #include <tuple>
 
-#define empty 65535.0f
-#define empty_interval make_float2( empty, empty )
+#define EMPTY 65535.0f
+#define EMPTY_INTERVAL make_float2( EMPTY, EMPTY )
 
 __device__ __host__ inline bool operator==(const float2& a, const float2& b) { return a.x == b.x && a.y == b.y; };
 __device__ __host__ inline bool operator!=(const float2& a, const float2& b) { return a.x != b.x || a.y != b.y; };

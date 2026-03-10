@@ -35,12 +35,12 @@ HeightFieldExtractor::HeightFieldExtractor( std::tuple<int, int> output_resoluti
 	, max_buffer_length(max_buffer_length)
 {
 	int3 extended_heightfield_size = make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length );
-	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(extended_heightfield_size, empty_interval);
+	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(extended_heightfield_size, EMPTY_INTERVAL);
 	result_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), n_hf_entries));
 	cudaMallocHost(&result_cpu, sizeof(float2) * extended_heightfield_size.x * extended_heightfield_size.y * n_hf_entries);
 	csg_resolver = new CSG_Resolver(extended_heightfield_gpu, make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), n_hf_entries );
-	z_buffer = new GPUMappedFloatBuffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), empty );
-	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), empty);
+	z_buffer = new GPUMappedFloatBuffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), EMPTY );
+	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), EMPTY);
 	normal_map_gpu = allocate_buffer_on_gpu<float3>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
@@ -123,9 +123,9 @@ std::tuple< py::array_t<float>, py::array_t<float3>>  HeightFieldExtractor::extr
 
 void HeightFieldExtractor::intersect(float image_plane)
 {
-	z_buffer->set_mem_to_initial_value(make_int3(output_resolution.x, output_resolution.y, 1), empty);
+	z_buffer->set_mem_to_initial_value(make_int3(output_resolution.x, output_resolution.y, 1), EMPTY);
 	int3 extended_heightfield_size = make_int3(output_resolution.x, output_resolution.y, max_buffer_length);
-	call_mem_set_kernel<float2>(extended_heightfield_gpu, extended_heightfield_size, empty_interval);
+	call_mem_set_kernel<float2>(extended_heightfield_gpu, extended_heightfield_size, EMPTY_INTERVAL);
 
 	int3 normalmap_size = make_int3(output_resolution.x, output_resolution.y, 1);
 	call_mem_set_kernel<float3>(normal_map_gpu, normalmap_size, make_float3(0.5, 0.5, 0.5) );

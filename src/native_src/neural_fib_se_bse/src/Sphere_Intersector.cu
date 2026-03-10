@@ -19,7 +19,11 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 										int buffer_length,
 										int n_hf_entries,
 										float image_plane_z,
-										bool debug )
+										bool debug ,
+										const int* tile_offsets,
+										const int* tile_prim_list,
+										int tile_size,
+										int tile_dim_x)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -36,12 +40,18 @@ __global__ void rasterize_sphere_kernel(Sphere* spheres,
 
 	// search beginning
 	int hit_index = 0;
-	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
+	while (extended_heightfield[pixel_index * buffer_length + hit_index] != EMPTY_INTERVAL)
 		hit_index++;
+	const int tile_x = idx / tile_size;
+	const int tile_y = idy / tile_size;
+	const int tile_id = tile_y * tile_dim_x + tile_x;
+	const int prim_begin = tile_offsets[tile_id];
+	const int prim_end = tile_offsets[tile_id + 1];
 
 	// loop over all spheres
-	for (int sphere_id = 0; sphere_id < n_spheres; sphere_id++)
+	for (int k = prim_begin; k < prim_end; k++)
 	{
+		const int sphere_id = tile_prim_list[k];
 		const Sphere& sphere = spheres[sphere_id];
 
 		const float dz = fabsf( sphere.position.z - image_plane_z);
@@ -122,9 +132,10 @@ Sphere_Intersector::~Sphere_Intersector()
 void Sphere_Intersector::intersect( float image_plane, GPUMappedFloatBuffer& z_buffer )
 {
 	int2 grid_size = output_resolution;
-	dim3 block_size(32, 32);
+	const int tile_size = screen_grid->tile_size;
+	dim3 block_size(tile_size, 8);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer.gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false );
+	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer.gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, screen_grid->tile_offsets_gpu, screen_grid->tile_prim_list_gpu, tile_size, screen_grid->tile_dim.x);
 	throw_on_cuda_error();
 }
 
