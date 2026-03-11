@@ -133,7 +133,7 @@ void Sphere_Intersector::intersect( float image_plane, GPUMappedFloatBuffer& z_b
 {
 	int2 grid_size = output_resolution;
 	const int tile_size = screen_grid->tile_size;
-	dim3 block_size(tile_size, 8);
+	dim3 block_size(tile_size, tile_size);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
 	rasterize_sphere_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer.gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, screen_grid->tile_offsets_gpu, screen_grid->tile_prim_list_gpu, tile_size, screen_grid->tile_dim.x);
 	throw_on_cuda_error();

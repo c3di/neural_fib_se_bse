@@ -73,7 +73,7 @@ void Abstract_Intersector<Primitive>::add_primitives_py(py::array& primitives)
 		free_screen_grid(*screen_grid);
 		delete(screen_grid);
 	}
-	screen_grid = new ScreenGrid(build_screen_grid_cpu(primitives_cpu, output_resolution, 32));
+	screen_grid = new ScreenGrid(build_screen_grid_cpu(primitives_cpu, output_resolution, 16));
 
 }
 
