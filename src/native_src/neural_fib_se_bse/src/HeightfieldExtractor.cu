@@ -2,6 +2,7 @@
 #include "Sphere_Intersector.h"
 #include "Cylinder_Intersector.h"
 #include "Cuboid_Intersector.h"
+#include "Volume_Intersector.h"
 #include "CSG_Resolver.h"
 
 #include "cuda_utils.h"
@@ -34,11 +35,12 @@ HeightFieldExtractor::HeightFieldExtractor( std::tuple<int, int> output_resoluti
 	, max_buffer_length(max_buffer_length)
 {
 	int3 extended_heightfield_size = make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length );
-	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(extended_heightfield_size, empty_interval);
+	extended_heightfield_gpu = allocate_buffer_on_gpu<float2>(extended_heightfield_size, EMPTY_INTERVAL);
 	result_gpu = allocate_buffer_on_gpu<float2>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), n_hf_entries));
 	cudaMallocHost(&result_cpu, sizeof(float2) * extended_heightfield_size.x * extended_heightfield_size.y * n_hf_entries);
 	csg_resolver = new CSG_Resolver(extended_heightfield_gpu, make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), max_buffer_length), n_hf_entries );
-	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
+	z_buffer = new GPUMappedFloatBuffer( make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), EMPTY );
+	z_buffer_gpu = allocate_buffer_on_gpu<float>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1), EMPTY);
 	normal_map_gpu = allocate_buffer_on_gpu<float3>(make_int3(std::get<0>(output_resolution), std::get<1>(output_resolution), 1));
 }
 
@@ -46,6 +48,7 @@ HeightFieldExtractor::~HeightFieldExtractor()
 {
 	cudaFree(normal_map_gpu);
 	cudaFree(z_buffer_gpu);
+	delete(z_buffer);
 	delete(csg_resolver);
 	cudaFree(result_gpu);
 	cudaFree(extended_heightfield_gpu);
@@ -58,45 +61,53 @@ HeightFieldExtractor::~HeightFieldExtractor()
 
 void HeightFieldExtractor::add_spheres_py(py::array& spheres)
 {
-	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Sphere_Intersector(extended_heightfield_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(spheres);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_spheres(std::vector<Sphere>& spheres)
 {
-	auto method = new Sphere_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Sphere_Intersector(extended_heightfield_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(spheres);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cylinders_py(py::array& cylinders)
 {
-	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Cylinder_Intersector(extended_heightfield_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(cylinders);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cylinders(std::vector<Cylinder>& cylinders)
 {
-	auto method = new Cylinder_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Cylinder_Intersector(extended_heightfield_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(cylinders);
 	intersectors.push_back(method);
  }
 
 void HeightFieldExtractor::add_cuboids_py(py::array& cuboids)
 {
-	auto method = new Cuboid_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Cuboid_Intersector(extended_heightfield_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives_py(cuboids);
 	intersectors.push_back(method);
 }
 
 void HeightFieldExtractor::add_cuboids(std::vector<Cuboid>& cuboids)
 {
-	auto method = new Cuboid_Intersector(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
+	auto method = new Cuboid_Intersector(extended_heightfield_gpu, normal_map_gpu, as_tuple(output_resolution), n_hf_entries, max_buffer_length);
 	method->add_primitives(cuboids);
 	intersectors.push_back(method);
 }
+
+
+void HeightFieldExtractor::add_volume_py(py::array& volume_data, std::tuple<int, int, int> volume_size, float threshold) {
+	auto method = new Volume_Intersector(volume_size, threshold, extended_heightfield_gpu, normal_map_gpu, n_hf_entries, max_buffer_length);
+	method->add_volume_py(volume_data);
+	intersectors.push_back(method);
+}
+
 
 std::tuple<float2*, float3*> HeightFieldExtractor::extract_data_representation(float image_plane)
 {
@@ -112,14 +123,15 @@ std::tuple< py::array_t<float>, py::array_t<float3>>  HeightFieldExtractor::extr
 
 void HeightFieldExtractor::intersect(float image_plane)
 {
+	z_buffer->set_mem_to_initial_value(make_int3(output_resolution.x, output_resolution.y, 1), EMPTY);
 	int3 extended_heightfield_size = make_int3(output_resolution.x, output_resolution.y, max_buffer_length);
-	call_mem_set_kernel<float2>(extended_heightfield_gpu, extended_heightfield_size, empty_interval);
+	call_mem_set_kernel<float2>(extended_heightfield_gpu, extended_heightfield_size, EMPTY_INTERVAL);
 
 	int3 normalmap_size = make_int3(output_resolution.x, output_resolution.y, 1);
 	call_mem_set_kernel<float3>(normal_map_gpu, normalmap_size, make_float3(0.5, 0.5, 0.5) );
 	
 	for (auto intersectors : intersectors) {
-		intersectors->intersect(image_plane);
+		intersectors->intersect(image_plane, *z_buffer);
 		cudaDeviceSynchronize();
 	}
 	csg_resolver->resolve_csg(image_plane);

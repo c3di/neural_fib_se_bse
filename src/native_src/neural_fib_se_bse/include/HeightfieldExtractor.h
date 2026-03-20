@@ -16,6 +16,8 @@ namespace py = pybind11;
 #include <vector>
 #include <tuple>
 
+#include "gpu_mapped_object.h"
+
 class Intersector;
 class Sphere_Intersector;
 class Cylinder_Intersector;
@@ -48,6 +50,8 @@ public:
 	void add_cuboids_py(py::array& cuboids);
 	void add_cuboids(std::vector<Cuboid>& cuboids);
 
+	void add_volume_py(py::array& volume_data, std::tuple<int, int, int> volume_size, float threshold);
+
 	std::tuple< float2*, float3* > extract_data_representation(float image_plane);
 	std::tuple< py::array_t<float>, py::array_t<float3>> extract_data_representation_py(float image_plane);
 	void intersect(float image_plane );
@@ -72,4 +76,5 @@ protected:
 	int n_hf_entries;
 	int max_buffer_length;
 	float image_plane;
+	GPUMappedFloatBuffer* z_buffer;
 };

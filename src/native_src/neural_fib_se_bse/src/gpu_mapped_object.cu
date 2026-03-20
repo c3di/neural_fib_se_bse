@@ -47,6 +47,14 @@ GPUMappedObject<DTYPE>::GPUMappedObject(int3 dimensions, DTYPE init_value)
 		*(_cpu_ptr + i) = init_value;
 }
 
+
+template<typename DTYPE>
+void GPUMappedObject<DTYPE>::set_mem_to_initial_value(int3 dimensions, DTYPE init_value){
+	call_mem_set_kernel(init_value);
+	for ( size_t i = 0; i < dimensions.x * dimensions.y * dimensions.z; i++ )
+		*(_cpu_ptr + i) = init_value;
+}
+
 template<typename DTYPE>
 GPUMappedObject<DTYPE>::GPUMappedObject(int3 dimensions, DTYPE* gpu_ptr)
 	: ownsCPUBuffer(true)

@@ -27,7 +27,7 @@ __global__ void resolve_csg_kernel
 	float2& last_element_of_interest = extended_heightfield[pixel_index * output_resolution.z + n_hf_entries-1];
 
 	int i = 1;
-	while ( i < output_resolution.z && extended_heightfield[pixel_index * output_resolution.z + i].x != empty)
+	while ( i < output_resolution.z && extended_heightfield[pixel_index * output_resolution.z + i].x != EMPTY)
 	{
 		if (debug && idx == 74 && idy == 45)
 		{
@@ -66,7 +66,7 @@ __global__ void resolve_csg_kernel
 				float new_x = fminf(a.x, b.x);
 				float new_y = fmaxf(a.y, b.y);
 				a = make_float2(new_x, new_y);
-				b = empty_interval;
+				b = EMPTY_INTERVAL;
 				continue;
 			} // merge
 		}

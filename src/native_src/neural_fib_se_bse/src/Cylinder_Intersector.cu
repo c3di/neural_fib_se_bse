@@ -49,7 +49,11 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 										int n_hf_entries,
 										float image_plane_z,
 										bool debug, 
-										int2 debug_position )
+										int2 debug_position,
+										const int* tile_offsets,
+										const int* tile_prim_list,
+										int tile_size,
+										int tile_dim_x)
 {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
@@ -61,25 +65,25 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 
 	int pixel_index = idy * output_resolution.x + idx;
 
-	// initialize z_buffer
-	z_buffer[pixel_index] = empty;
-
 	const float pixel_x = (float) idx;
 	const float pixel_y = (float) idy;
 
 	// search beginning
 	int hit_index = 0;
-	while (extended_heightfield[pixel_index * buffer_length + hit_index] != empty_interval)
+	while (extended_heightfield[pixel_index * buffer_length + hit_index] != EMPTY_INTERVAL)
 		hit_index++;
 
-	if (debug && idx == debug_position.x && idy == debug_position.y)
-		printf("starting insertion at hit index %i\n", hit_index);
+
+	const int tile_x = idx / tile_size;
+	const int tile_y = idy / tile_size;
+	const int tile_id = tile_y * tile_dim_x + tile_x;
+	const int prim_begin = tile_offsets[tile_id];
+	const int prim_end = tile_offsets[tile_id + 1];
 
 	// loop over all spheres
-	for (int primitive_id = 0; primitive_id < n_primitives; primitive_id++)
+	for (int k = prim_begin; k < prim_end; k++)
 	{
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("  primitive ID %i\n", primitive_id);
+		const int primitive_id = tile_prim_list[k];
 		const Cylinder& cylinder = primitives[primitive_id];
 
 		if ((pixel_x < cylinder.position.x - cylinder.aabb.x) || (pixel_x > cylinder.position.x + cylinder.aabb.x)
@@ -87,8 +91,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 		 || (image_plane_z > cylinder.position.z + cylinder.aabb.z))
 			continue;
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("  aabb test passed\n");
 
 		float3 ray_origin    = make_float3(pixel_x-cylinder.position.x, pixel_y - cylinder.position.y, image_plane_z - cylinder.position.z);
 		float3 ray_direction = make_float3(0.0f,                        0.0f,                          1.0f);
@@ -168,8 +170,6 @@ __global__ void rasterize_cylinder_kernel(Cylinder* primitives,
 			cut_case = true;
 		}
 
-		if (debug && idx == debug_position.x && idy == debug_position.y)
-			printf("  hit at %.2f %.2f\n", t0, t1 );
 
 		extended_heightfield[pixel_index * buffer_length + hit_index] = make_float2( t0, t1 );
 		hit_index++;
@@ -202,8 +202,8 @@ Cylinder_Intersector::Cylinder_Intersector(std::tuple<int, int> output_resolutio
 {
 }
 
-Cylinder_Intersector::Cylinder_Intersector(float2* extended_heightfield_gpu, float* z_buffer_gpu, float3* normal_map_gpu, std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
-	: Abstract_Intersector<Cylinder>(extended_heightfield_gpu, z_buffer_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
+Cylinder_Intersector::Cylinder_Intersector(float2* extended_heightfield_gpu, float3* normal_map_gpu, std::tuple<int, int> output_resolution, int n_hf_entries, int max_buffer_length)
+	: Abstract_Intersector<Cylinder>(extended_heightfield_gpu, normal_map_gpu, output_resolution, n_hf_entries, max_buffer_length)
 {
 }
 
@@ -211,12 +211,13 @@ Cylinder_Intersector::~Cylinder_Intersector()
 {
 }
 
-void Cylinder_Intersector::intersect( float image_plane )
+void Cylinder_Intersector::intersect( float image_plane, GPUMappedFloatBuffer& z_buffer )
 {
 	int2 grid_size = output_resolution;
-	dim3 block_size(16, 16);
+	const int tile_size = screen_grid->tile_size;
+	dim3 block_size(tile_size, tile_size);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
-	rasterize_cylinder_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer->gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, make_int2(425, 425) );
+	rasterize_cylinder_kernel << <num_blocks, block_size >> > (primitives_gpu, primitives_cpu.size(), extended_heightfield->gpu_ptr(), normal_map->gpu_ptr(), z_buffer.gpu_ptr(), output_resolution, buffer_length, n_hf_entries, image_plane, false, make_int2(425, 425), screen_grid->tile_offsets_gpu, screen_grid->tile_prim_list_gpu, tile_size, screen_grid->tile_dim.x);
 	throw_on_cuda_error();
 }
 

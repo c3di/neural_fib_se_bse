@@ -1,0 +1,6 @@
+__pycache__/
+.benchmarks/
+.ipynb_checkpoints/
+*.tif
+*.tiff
+local_*
