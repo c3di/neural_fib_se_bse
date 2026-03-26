@@ -29,18 +29,18 @@ __device__ inline static float get_z_differential_texture(cudaTextureObject_t vo
 
 
 
-__global__ void get_height_field_marching_volume_kernel(cudaTextureObject_t volume_texture, float density_threshold, float2* extended_heightfield, int3 volume_size, int buffer_length, int n_hf_entries,
+__global__ void get_height_field_marching_volume_kernel(cudaTextureObject_t volume_texture, float density_threshold, float2* extended_heightfield, int3 volume_size, int2 output_resolution, int buffer_length, int n_hf_entries,
 	float image_plane_z) {
 
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (idx >= volume_size.x)
+	if (idx >= output_resolution.x)
 		return;
-	if (idy >= volume_size.y)
+	if (idy >= output_resolution.y)
 		return;
 
-	int pixel_index = idy * volume_size.x + idx;
+	int pixel_index = idy * output_resolution.x + idx;
 
 	int hit_index = 0;
 	int buffer_offset = pixel_index * buffer_length;
@@ -56,8 +56,8 @@ __global__ void get_height_field_marching_volume_kernel(cudaTextureObject_t volu
 
 	int num_hf_entries = 0;
 
-	float norm_x = ((float)idx + 0.5f) / volume_size.x;
-	float norm_y = ((float)idy + 0.5f) / volume_size.y;
+	float norm_x = ((float)idx + 0.5f) / output_resolution.x;
+	float norm_y = ((float)idy + 0.5f) / output_resolution.y;
 	float norm_z = image_plane_z / volume_size.z;
 
 	float step = 0.5f / volume_size.z;
@@ -79,64 +79,69 @@ __global__ void get_height_field_marching_volume_kernel(cudaTextureObject_t volu
 		{
 				exit = norm_z;
 				found_entry = false;
-				extended_heightfield[buffer_offset + hit_index] = make_float2(entry, exit);
+				extended_heightfield[buffer_offset + hit_index] = make_float2(entry * volume_size.z, exit * volume_size.z);
 				num_hf_entries++;
 				hit_index++;
-			
+
 		}
 
 	}
 	if (found_entry && hit_index < buffer_length) {
 		exit = norm_z - step;
-		extended_heightfield[buffer_offset + hit_index] = make_float2(entry, exit);
+		extended_heightfield[buffer_offset + hit_index] = make_float2(entry * volume_size.z, exit * volume_size.z);
 	}
 
 
 }
 
 
-__global__ void get_normal_map_single_kernel_marching_volume_kernel(cudaTextureObject_t volume_texture, float density_threshold, float3* normal_map, float* z_buffer, int3 volume_size, float image_plane_z) {
+__global__ void get_normal_map_single_kernel_marching_volume_kernel(cudaTextureObject_t volume_texture, float density_threshold, float3* normal_map, float* z_buffer, int3 volume_size, int2 output_resolution, float image_plane_z) {
 	int idx = blockIdx.x * blockDim.x + threadIdx.x;
 	int idy = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (idx >= volume_size.x)
+	if (idx >= output_resolution.x)
 		return;
-	if (idy >= volume_size.y)
+	if (idy >= output_resolution.y)
 		return;
 
-	int pixel_index = idy * volume_size.x + idx;
+	int pixel_index = idy * output_resolution.x + idx;
 
-	float norm_x = ((float)idx + 0.5f) / volume_size.x;
-	float norm_y = ((float)idy + 0.5f) / volume_size.y;
+	float norm_x = ((float)idx + 0.5f) / output_resolution.x;
+	float norm_y = ((float)idy + 0.5f) / output_resolution.y;
 	float norm_z = image_plane_z / volume_size.z;
 	float step = 0.5f / volume_size.z;
 
 	float previous_z = norm_z;
 	float previous_density = get_tex_pos_value(volume_texture, norm_x, norm_y, norm_z);
-	norm_z += step;
 
+	// Ray starts inside material: top surface is at z=0, normal points straight up
+	if (previous_density > density_threshold) {
+		z_buffer[pixel_index] = 0.0f;
+		normal_map[pixel_index] = make_float3(0.0f, 0.0f, 1.0f);
+		return;
+	}
+
+	norm_z += step;
 
 	for (; norm_z <= 1.0f; norm_z += step) {
 		float density = get_tex_pos_value(volume_texture, norm_x, norm_y, norm_z);
 
-		if ((previous_density - density_threshold) * (density - density_threshold) < 0.0f) {
+		// Only respond to entry crossings (outside -> inside material)
+		if (previous_density <= density_threshold && density > density_threshold) {
 
 			float alpha = (density_threshold - previous_density) / (density - previous_density);
 			float surface = previous_z + alpha * step;
-			z_buffer[pixel_index] = surface;
+			z_buffer[pixel_index] = surface * volume_size.z;
 
 			float3 normalized_pos = make_float3(norm_x, norm_y, surface);
 
 			float dx = get_x_differential_texture(volume_texture, normalized_pos, 1.0f / volume_size.x);
-
 			float dy = get_y_differential_texture(volume_texture, normalized_pos, 1.0f / volume_size.y);
-
 			float dz = get_z_differential_texture(volume_texture, normalized_pos, 1.0f / volume_size.z);
 			float3 normal = getNormalizedVec(make_float3(dx, dy, dz));
 			normal.z = normal.z < 0.0f ? (normal.z * -1.0f) : normal.z;
-				
-			normal_map[pixel_index] = normal;
 
+			normal_map[pixel_index] = normal;
 			return;
 		}
 		previous_density = density;
@@ -147,15 +152,18 @@ __global__ void get_normal_map_single_kernel_marching_volume_kernel(cudaTextureO
 
 
 Volume_Intersector::Volume_Intersector(std::tuple<int, int, int> volume_size_,
+										std::tuple<int, int> output_resolution_,
 										float threshold,
 										float2* extended_heightfield_gpu,
-										float3* normal_map_gpu, 
-										int n_hf_entries, 
-										int max_buffer_length) 
-	: volume_size(as_int3(volume_size_)),threshold_value(threshold), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length){
+										float3* normal_map_gpu,
+										int n_hf_entries,
+										int max_buffer_length)
+	: volume_size(as_int3(volume_size_))
+	, output_resolution(make_int2(std::get<0>(output_resolution_), std::get<1>(output_resolution_)))
+	, threshold_value(threshold), n_hf_entries(n_hf_entries), buffer_length(max_buffer_length){
 	this->size_of_volume = this->volume_size.x * this->volume_size.y * this->volume_size.z;
-	extended_heightfield = new GPUMappedFloat2Buffer(make_int3(this->volume_size.x, this->volume_size.y, buffer_length), extended_heightfield_gpu);
-	normal_map = new GPUMappedFloat3Buffer(make_int3(this->volume_size.y, this->volume_size.x, 1), normal_map_gpu);
+	extended_heightfield = new GPUMappedFloat2Buffer(make_int3(this->output_resolution.x, this->output_resolution.y, buffer_length), extended_heightfield_gpu);
+	normal_map = new GPUMappedFloat3Buffer(make_int3(this->output_resolution.x, this->output_resolution.y, 1), normal_map_gpu);
 };
 	
 
@@ -274,14 +282,14 @@ void Volume_Intersector::add_volume_py(py::array& data) {
 
 
 void Volume_Intersector::intersect(float image_plane, GPUMappedFloatBuffer& z_buffer) {
-		
-	int2 grid_size = make_int2(this->volume_size.x, this->volume_size.y);
+
+	int2 grid_size = make_int2(this->output_resolution.x, this->output_resolution.y);
 	dim3 block_size(32, 8);
 	dim3 num_blocks((grid_size.x + block_size.x - 1) / block_size.x, (grid_size.y + block_size.y - 1) / block_size.y);
 
-	get_height_field_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->volume_size, this->buffer_length, this->n_hf_entries, image_plane);
+	get_height_field_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->extended_heightfield->gpu_ptr(), this->volume_size, this->output_resolution, this->buffer_length, this->n_hf_entries, image_plane);
 
-	get_normal_map_single_kernel_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, image_plane);
+	get_normal_map_single_kernel_marching_volume_kernel << <num_blocks, block_size >> > (this->volume_data_gpu_tex, this->threshold_value, this->normal_map->gpu_ptr(), z_buffer.gpu_ptr(), this->volume_size, this->output_resolution, image_plane);
 
 	throw_on_cuda_error();
 }

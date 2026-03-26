@@ -8,7 +8,7 @@
 class Volume_Intersector : public Intersector {
 
 public:
-	Volume_Intersector(std::tuple<int, int, int> volume_size_, float threshold, float2* extended_heightfield_gpu, float3* normal_map_gpu, int n_hf_entries, int max_buffer_length = 64);
+	Volume_Intersector(std::tuple<int, int, int> volume_size_, std::tuple<int, int> output_resolution_, float threshold, float2* extended_heightfield_gpu, float3* normal_map_gpu, int n_hf_entries, int max_buffer_length = 64);
 	~Volume_Intersector();
 
 	void add_volume_py(py::array& data);
@@ -26,6 +26,7 @@ private:
 	inline cudaResourceDesc create_resource_descriptor();
 	inline cudaTextureDesc create_texture_descriptor();
 	int3 volume_size;
+	int2 output_resolution;
 	int size_of_volume;
 	cudaArray* volume_array_gpu = nullptr;
 	cudaTextureObject_t volume_data_gpu_tex = 0;

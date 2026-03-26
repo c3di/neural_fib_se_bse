@@ -119,6 +119,10 @@ ScreenGrid build_screen_grid_cpu(const std::vector<Primitive>& primitives_cpu,
     }
     
     return grid;
-    
+
 }
+
+template ScreenGrid build_screen_grid_cpu<Sphere>(const std::vector<Sphere>&, int2, int);
+template ScreenGrid build_screen_grid_cpu<Cylinder>(const std::vector<Cylinder>&, int2, int);
+template ScreenGrid build_screen_grid_cpu<Cuboid>(const std::vector<Cuboid>&, int2, int);
 

@@ -33,16 +33,15 @@ class NeuralModel(torch.nn.Module):
         self.load_weights()
 
     def load_weights( self ):
-        if not os.path.exists( self.weights_dir ):
-            print( "creating", self.weights_dir )
-            os.makedirs( self.weights_dir )
-        
-        state_dict = torch.hub.load_state_dict_from_url( 
-            url       = self.weights_urlbase + "/" +  self.weights_filename,
-            model_dir = self.weights_dir,
-            file_name = self.weights_filename )
-        state_dict = torch.load( self.weights_dir + "/" + self.weights_filename )
-        self.load_state_dict( state_dict )        
+        os.makedirs( self.weights_dir, exist_ok=True )
+        weights_path = os.path.join( self.weights_dir, self.weights_filename )
+        if not os.path.exists( weights_path ):
+            torch.hub.load_state_dict_from_url(
+                url       = self.weights_urlbase + "/" + self.weights_filename,
+                model_dir = self.weights_dir,
+                file_name = self.weights_filename )
+        state_dict = torch.load( weights_path, weights_only=True )
+        self.load_state_dict( state_dict )
         
     def forward(self, x_hf, x_normal):
         if self.datalayout == "normal_exthf":
